@@ -9,39 +9,43 @@
 
 ##include "client.h"
 
-int init_tcp_cl(char* ip, char* gate){
-  
-  int fd, errcode;
-  ssize_t n;
-  socklen_t addrlen;
-  struct addrinfo hints, *res;
-  struct sockaddr_in addr;
-  char buffer[128];
+struct Client init_tcp_cl(char* ip, char* gate){
 
-  fd = socket(AF_INET, SOCK_STREAM, 0); //TCP socket
-  if(fd == -1) /*error*/ exit(1);
+  struct Client client;
+
+  client.fd = socket(AF_INET, SOCK_STREAM, 0); //TCP socket
+  if(client.fd == -1) /*error*/ exit(1);
 
   memset(&hints, 0, sizeof hints);
-  hints.ai_family = AF_INET;
-  hints.ai_socktype = SOCK_STREAM;
+  client.hints.ai_family = AF_INET;
+  client.hints.ai_socktype = SOCK_STREAM;
 
-  errcode = getaddrinfo(ip, gate, &hints, &res);
-  if(errcode != 0) /*error*/ exit(1);
+  client.errcode = getaddrinfo(ip, gate, &client.hints, &client.res);
+  if(client.errcode != 0) /*error*/ exit(1);
 
-  n = connect(fd, res->ai_addr, res->ai_addrlen);
+  n = connect(client.fd, client.res->ai_addr, client.res->ai_addrlen);
   if(n == -1) /*error*/ exit(1);
 
-  n = write(fd, "Hello! :)\n", 10);
-  if(n == -1) /*error*/ exit(1);
+}
 
-  write(1, "client: ", 8); write(1, "Hello! :)\n", n);
+struct Client listen_tcp_cl(struct Client client){
 
-  n = read(fd, buffer, 128);
-  if(n == -1) /*error*/ exit(1);
+  client.n = write(client.fd, "Hello! :)\n", 10);
+  if(client.n == -1) /*error*/ exit(1);
 
-  write(1, "echo: ",6); write(1,buffer,n);
+  write(1, "client: ", 8); write(1, "Hello! :)\n", client.n);
 
-  freeaddrinfo(res);
-  close(fd);
+  client.n = read(client.fd, client.buffer, 128);
+  if(client.n == -1) /*error*/ exit(1);
+
+  write(1, "echo: ",6); write(1,client.buffer,client.n);
+
+}
+
+void close_tcp_cl(struct Client client)
+
+  freeaddrinfo(client.res);
+  close(client.fd);
   exit(0);
+
 }

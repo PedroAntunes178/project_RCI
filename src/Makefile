@@ -1,7 +1,7 @@
 ############################# Makefile ##########################
-all: dki
-dki: tcp_server.o udp_server.o main.o
-	gcc -o dki tcp_server.o udp_server.o main.o
+all: dkt
+dkt: tcp_server.o udp_server.o main.o
+	gcc -o dkt tcp_server.o udp_server.o main.o
 tcp_server.o: tcp_server.c server.h
 	gcc -o tcp_server.o -c tcp_server.c
 udp_server.o: udp_server.c server.h
@@ -11,4 +11,4 @@ main.o: main.c server.h
 clean:
 	rm -rf *.o
 mrproper: clean
-	rm -rf dki
+	rm -rf dkt

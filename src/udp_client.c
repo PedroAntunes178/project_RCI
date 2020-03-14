@@ -9,37 +9,39 @@
 
 ##include "client.h"
 
-int init_udp_cl(char* ip, char* gate){
+struct Client init_udp_cl(char* ip, char* gate){
 
-  int fd, errcode;
-  ssize_t n;
-  socklen_t addrlen;
-  struct addrinfo hints, *res;
-  struct sockaddr_in addr;
-  char buffer[128];
+  struct Client client;
 
-  fd = socket(AF_INET, SOCK_DGRAM, 0);
-  if (fd == -1) /**error*/ exit(1);
+  client.fd = socket(AF_INET, SOCK_DGRAM, 0);
+  if (client.fd == -1) /**error*/ exit(1);
 
-  memset (&hints, 0, sizeof hints);
-  hints.ai_family = AF_INET;
-  hints.ai_socktype = SOCK_DGRAM;
+  memset (&client.hints, 0, sizeof client.hints);
+  client.hints.ai_family = AF_INET;
+  client.hints.ai_socktype = SOCK_DGRAM;
 
-  errcode = getaddrinfo(ip, gate, &hints, &res);
-  if (errcode != 0) /*error*/  exit(1);
+  client.errcode = getaddrinfo(ip, gate, &client.hints, &client.res);
+  if (client.errcode != 0) /*error*/  exit(1);
 
-  n = sendto(fd, "Hello!\n", 10, 0, res->ai_addr, res->ai_addrlen);
-  if (n==-1) /*error*/ exit(1);
+  }
 
-  addrlen = sizeof(addr);
-  n = recvfrom(fd, buffer, 128, 0, (struct sockaddr*) &addr, &addrlen);
-  if(n == -1) /*error*/ exit(-1);
+struct Client listen_udp_cl(struct Client client){
+
+  client.n = sendto(client.fd, "Hello!\n", 10, 0, client.res->ai_addr, client.res->ai_addrlen);
+  if (client.n==-1) /*error*/ exit(1);
+
+  client.addrlen = sizeof(client.addr);
+  client.n = recvfrom(client.fd, client.buffer, 128, 0, (struct sockaddr*) &client.addr, &client.addrlen);
+  if(client.n == -1) /*error*/ exit(-1);
 
   write(1, "echo: ", 6);
-  write(1, buffer, n);
+  write(1, client.buffer, client.n);
 
-  freeaddrinfo(res);
-  close(fd);
+}
 
+void close_udp_cl(struct Client client)
+
+  freeaddrinfo(client.res);
+  close(client.fd);
 
 }
