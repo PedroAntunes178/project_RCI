@@ -62,11 +62,14 @@ int main(int argc, char *argv[]){
     }
 
     if(FD_ISSET(0, &rfds)){
-      if(fscanf(stdin, "%s", s)>=0 && strcmp(s, "new")!=0){
-        if(fscanf(stdin, "%d", tcp_server.key)==0){
-          printf("%d\n", tcp_server.key);
+      if(fscanf(stdin, "%s", s)>=0 && strcmp(s, "new")==0){
+        printf("lol %s\n", s);
+        if(fscanf(stdin, "%d", &tcp_server.key)==0){
+          printf("litos %d\n", tcp_server.key);
         }
-        else(printf("Nao foi dada uma Chave!\n", );)
+        else{
+          printf("Nao foi dada uma Chave!\n");
+        }
       }
     }
   }
