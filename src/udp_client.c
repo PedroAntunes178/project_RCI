@@ -25,7 +25,7 @@ struct Client init_udp_cl(char* ip, char* gate){
 
   }
 
-struct Client listen_udp_cl(struct Client client){
+struct Client request_udp_cl(struct Client client){
 
   client.n = sendto(client.fd, "Hello!\n", 10, 0, client.res->ai_addr, client.res->ai_addrlen);
   if (client.n==-1) /*error*/ exit(1);

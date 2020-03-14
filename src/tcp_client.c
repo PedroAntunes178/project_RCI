@@ -28,7 +28,7 @@ struct Client init_tcp_cl(char* ip, char* gate){
 
 }
 
-struct Client listen_tcp_cl(struct Client client){
+struct Client request_tcp_cl(struct Client client){
 
   client.n = write(client.fd, "Hello! :)\n", 10);
   if(client.n == -1) /*error*/ exit(1);

@@ -13,11 +13,11 @@ struct Client {
 };
 
 struct Client init_udp_cl(char*, char*);
-struct Client listen_udp_cl(struct Server);
+struct Client request_udp_cl(struct Server);
 void close_udp_cl(struct Client);
 
 struct Client init_tcp_cl(char*, char*);
-struct Client listen_tcp_cl(struct Client);
+struct Client request_tcp_cl(struct Client);
 void close_tcp_cl(struct Client);
 
 #endif
