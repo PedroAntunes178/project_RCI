@@ -13,11 +13,11 @@ struct Server {
   char buffer[128];
 };
 
-struct Server init_udp_sv();
+struct Server init_udp_sv(char*);
 struct Server listen_udp_sv(struct Server);
 void close_udp_sv(struct Server);
 
-struct Server init_tcp_sv();
+struct Server init_tcp_sv(char*);
 struct Server listen_tcp_sv(struct Server);
 void close_tcp_sv(struct Server);
 
