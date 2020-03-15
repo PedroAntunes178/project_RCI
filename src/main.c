@@ -24,7 +24,7 @@ int main(int argc, char *argv[]){
   char succ_gate[20];
   char s_succ_ip[20];
   char s_succ_gate[20];
-  bool exit_flag = false;
+  int exit_flag = 0;
 
   if(argc != 3) exit(1);
   /*else{
@@ -161,7 +161,7 @@ int main(int argc, char *argv[]){
       /*EXIT: exits the application successfully*/
       else if(strcmp(token, "exit\n") == 0){
           printf("\nExiting the application...\n");
-          exit_flag = true;
+          exit_flag = 1;
       }
       /*Invalid command, ignores it*/
       else printf("-> Invalid command.\n");
