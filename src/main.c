@@ -24,6 +24,7 @@ int main(int argc, char *argv[]){
   char succ_gate[20];
   char s_succ_ip[20];
   char s_succ_gate[20];
+  bool exit_flag = false;
 
   if(argc != 3) exit(1);
   /*else{
@@ -40,7 +41,7 @@ int main(int argc, char *argv[]){
   char buffer[10];
 
   state=idle;
-  while(1){
+  while(!(exit_flag)){
     FD_ZERO(&rfds);
     FD_SET(udp_server.fd, &rfds);
     /*sprintf(buffer, "%d", udp_server.fd);
@@ -160,7 +161,7 @@ int main(int argc, char *argv[]){
       /*EXIT: exits the application successfully*/
       else if(strcmp(token, "exit\n") == 0){
           printf("\nExiting the application...\n");
-          exit(EXIT_SUCCESS);
+          exit_flag = true;
       }
       /*Invalid command, ignores it*/
       else printf("-> Invalid command.\n");
@@ -168,6 +169,7 @@ int main(int argc, char *argv[]){
   }
   close_tcp_sv(tcp_server);
   close_udp_sv(udp_server);
+  exit(EXIT_SUCCESS);
 }
 
 int max(int x, int y)
