@@ -16,7 +16,7 @@ struct Client init_tcp_cl(char* ip, char* gate){
   client.fd = socket(AF_INET, SOCK_STREAM, 0); //TCP socket
   if(client.fd == -1) /*error*/ exit(1);
 
-  memset(&hints, 0, sizeof hints);
+  memset(&client.hints, 0, sizeof client.hints);
   client.hints.ai_family = AF_INET;
   client.hints.ai_socktype = SOCK_STREAM;
 

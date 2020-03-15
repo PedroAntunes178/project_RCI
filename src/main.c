@@ -30,7 +30,7 @@ int main(int argc, char *argv[]){
   fd_set rfds;
   enum {idle, busy} state;
   int maxfd, counter, afd = 5;
-  char teste[10];
+  char s[20];
 
   state=idle;
   while(1){
@@ -62,8 +62,15 @@ int main(int argc, char *argv[]){
     }
 
     if(FD_ISSET(0, &rfds)){
-      scanf("%s", teste);
-      printf("Input : %s\n", teste);
+      if(fscanf(stdin, "%s", s)>=0 && strcmp(s, "new")==0){
+        printf("lol %s\n", s);
+        if(fscanf(stdin, "%d", &tcp_server.key)==0){
+          printf("litos %d\n", tcp_server.key);
+        }
+        else{
+          printf("Nao foi dada uma Chave!\n");
+        }
+      }
     }
   }
   close_tcp_sv(tcp_server);
