@@ -19,6 +19,12 @@ int max(int, int);
 
 int main(int argc, char *argv[]){
   int ip, gate, block = 0;
+  int key;
+  char succ_ip[20];
+  char succ_gate[20];
+  char s_succ_ip[20];
+  char s_succ_gate[20];
+
   if(argc != 3) exit(1);
   /*else{
     sscanf(argv[1], "%d", &ip);
@@ -76,12 +82,12 @@ int main(int argc, char *argv[]){
           printf("-> Invalid command.\n");
           continue;
         }
-        tcp_server.key = atoi(token);
-        udp_server.key = atoi(token);
-        strcpy(tcp_server.succ_ip, argv[1]);
-        strcpy(tcp_server.succ_gate, argv[2]);
-        strcpy(tcp_server.s_succ_ip, argv[1]);
-        strcpy(tcp_server.s_succ_gate, argv[2]);
+        key = atoi(token);
+        key = atoi(token);
+        strcpy(succ_ip, argv[1]);
+        strcpy(succ_gate, argv[2]);
+        strcpy(s_succ_ip, argv[1]);
+        strcpy(s_succ_gate, argv[2]);
         block = 1;
         printf("-> Server created.\n");
       }
@@ -93,8 +99,8 @@ int main(int argc, char *argv[]){
           printf("-> Invalid command.\n");
           continue;
         }
-        tcp_server.key = atoi(token);
-        udp_server.key = atoi(token);
+        key = atoi(token);
+        key = atoi(token);
 
         /* do stuff */
 
@@ -109,8 +115,8 @@ int main(int argc, char *argv[]){
           printf("-> Invalid command.\n");
           continue;
         }
-        tcp_server.key = atoi(token);
-        udp_server.key = atoi(token);
+        key = atoi(token);
+        key = atoi(token);
         /*value of the successors ip*/
         token = strtok(NULL, " ");
         if(strcmp(token, "\n") == 0 || strcmp(token, " ") == 0){
@@ -118,7 +124,7 @@ int main(int argc, char *argv[]){
           continue;
         }
         printf("%s -this is succ_ip\n", token);
-        strcpy(tcp_server.succ_ip, token);
+        strcpy(succ_ip, token);
         /*value of the successors gate*/
         token = strtok(NULL, " ");
         if(strcmp(token, "\n") == 0 || strcmp(token, " ") == 0){
@@ -126,7 +132,7 @@ int main(int argc, char *argv[]){
           continue;
         }
         token[strlen(token)-1] = '\0'; /*cutting the \n*/
-        strcpy(tcp_server.succ_gate, token);
+        strcpy(succ_gate, token);
 
         /*test for unique case when there are only 2 servers*/
         /*otherwise do the normal procedure*/
@@ -143,8 +149,8 @@ int main(int argc, char *argv[]){
       /* FALTA ADICIONAR O ESTADO DO SERVIDOR!!! */
       else if(strcmp(token, "show\n") == 0 && block == 1){
           printf("-> Key: %d\n-> IP: %s\n-> PORT: %s\n-> SuccIP: %s\n"
-                    "-> SuccPORT: %s\n", tcp_server.key, argv[1], argv[2],
-                      tcp_server.succ_ip, tcp_server.succ_gate);
+                    "-> SuccPORT: %s\n", key, argv[1], argv[2],
+                      succ_ip, succ_gate);
       }
 
       /*FIND: ... */

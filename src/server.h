@@ -5,11 +5,6 @@ struct Server {
   int fd;
   int newfd;
   int errcode;
-  int key;
-  char succ_ip[20];
-  char succ_gate[20];
-  char s_succ_ip[20];
-  char s_succ_gate[20];
   ssize_t n;
   socklen_t addrlen;
   struct addrinfo hints;
