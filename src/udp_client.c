@@ -7,7 +7,7 @@
 #include <netdb.h>
 #include <string.h>
 
-##include "client.h"
+#include "server.h"
 
 struct Client init_udp_cl(char* ip, char* gate){
 
@@ -25,9 +25,9 @@ struct Client init_udp_cl(char* ip, char* gate){
 
   }
 
-struct Client request_udp_cl(struct Client client){
+struct Client request_udp_cl(struct Client client, char* msg){
 
-  client.n = sendto(client.fd, "Hello!\n", 10, 0, client.res->ai_addr, client.res->ai_addrlen);
+  client.n = sendto(client.fd, msg, sizeof(msg), 0, client.res->ai_addr, client.res->ai_addrlen);
   if (client.n==-1) /*error*/ exit(1);
 
   client.addrlen = sizeof(client.addr);
@@ -39,7 +39,7 @@ struct Client request_udp_cl(struct Client client){
 
 }
 
-void close_udp_cl(struct Client client)
+void close_udp_cl(struct Client client){
 
   freeaddrinfo(client.res);
   close(client.fd);
