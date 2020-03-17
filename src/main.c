@@ -21,12 +21,16 @@ int main(int argc, char *argv[]){
 
   if(argc != 3) exit(1);
 
-  int ip, gate, block = 0;
+  int block = 0;
   int key;
-  char succ_ip[20];
-  char succ_gate[20];
-  char s_succ_ip[20];
-  char s_succ_gate[20];
+  char* succ_ip;
+  succ_ip = (char*)malloc((Max+1)*sizeof(char));
+  char* succ_gate;
+  succ_gate = (char*)malloc((Max+1)*sizeof(char));
+  char* s_succ_ip;
+  s_succ_ip = (char*)malloc((Max+1)*sizeof(char));
+  char* s_succ_gate;
+  s_succ_gate = (char*)malloc((Max+1)*sizeof(char));
   int exit_flag = 0;
   struct Server udp_server = init_udp_sv(argv[2]);
   struct Server tcp_server = init_tcp_sv(argv[2]);
