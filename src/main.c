@@ -97,12 +97,6 @@ int main(int argc, char *argv[]){
 
       /*ENTRY: ... */
       else if(strcmp(token, "entry") == 0 && block == 0){
-        fscanf(stdin, "%s", token);
-        if(strcmp(token, "\n") == 0 || strcmp(token, " ") == 0){
-          printf("-> Invalid command.\n");
-          continue;
-        }
-        key = atoi(token);
 
         /* do stuff */
 
