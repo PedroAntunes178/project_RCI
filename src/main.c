@@ -106,7 +106,7 @@ int main(int argc, char *argv[]){
 
       /*SENTRY: adding a server specifying it's successor*/
       else if(strcmp(token, "sentry") == 0 && block == 0){
-        if(sscanf(buffer, "%s %d %s %s%c", token, &key, succ_ip, succ_gate, &eol) > 0 && eol == '\n'){
+        if(sscanf(buffer, "%s %d %s %s%c", token, &key, succ_ip, succ_gate, &eol) == 5 && eol == '\n'){
           /*test for unique case when there are only 2 servers*/
           /*otherwise do the normal procedure*/
           /*tcp_client = init_tcp_cl(succ_ip, succ_gate);
