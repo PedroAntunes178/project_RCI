@@ -18,6 +18,9 @@
 int max(int, int);
 
 int main(int argc, char *argv[]){
+
+  if(argc != 3) exit(1);
+
   int ip, gate, block = 0;
   int key;
   char succ_ip[20];
@@ -25,14 +28,6 @@ int main(int argc, char *argv[]){
   char s_succ_ip[20];
   char s_succ_gate[20];
   int exit_flag = 0;
-
-  if(argc != 3) exit(1);
-  /*else{
-    sscanf(argv[1], "%d", &ip);
-    sscanf(argv[2], "%d", &gate);
-  }
-  printf("ip: %d\n", ip);
-  printf("gate: %d\n", gate);*/
   struct Server udp_server = init_udp_sv(argv[2]);
   struct Server tcp_server = init_tcp_sv(argv[2]);
   struct Client tcp_client;
@@ -40,9 +35,11 @@ int main(int argc, char *argv[]){
   fd_set rfds;
   enum {idle, busy} state;
   int maxfd, counter, afd = 5;
-  char buffer[10];
+  char* buffer;
+  buffer = (char*)malloc((5*Max+1)*sizeof(char));
   char* token;
   token = (char*)malloc((Max+1)*sizeof(char));
+  char eol = 0;
 
   state=idle;
   while(!(exit_flag)){
@@ -77,10 +74,11 @@ int main(int argc, char *argv[]){
     READING INPUT FROM KEYBOARD
     **************************/
     if(FD_ISSET(0, &rfds)){
-      fscanf(stdin, "%s", token); /*o fscanf() só vai buscar palavra a palavra*/
+      fgets(buffer, sizeof(buffer), stdin);
+      sscanf(buffer, "%s", token);
       /*NEW: creating the first server*/
       if(strcmp(token, "new") == 0 && block == 0){
-        if(fscanf(stdin, "%d",  &key) == 1){
+        if(sscanf(buffer, "%s %d%c", token, &key, &eol) == 3 && eol == '\n'){
           strcpy(succ_ip, argv[1]);
           strcpy(succ_gate, argv[2]);
           strcpy(s_succ_ip, argv[1]);
@@ -89,9 +87,12 @@ int main(int argc, char *argv[]){
           printf("Chave : %d\n", key);
           printf("-> Ring created.\n");
         }
-        else
-          printf("-> Invalid command.\n");
-
+        else{
+          printf("-> The command \\new is of type \"new i\". Where i is a key.\n");
+          fflush(stdin);
+          memset(buffer,0,sizeof(buffer));
+          memset(token,0,sizeof(token));
+        }
       }
 
       /*ENTRY: ... */
@@ -111,53 +112,36 @@ int main(int argc, char *argv[]){
 
       /*SENTRY: adding a server specifying it's successor*/
       else if(strcmp(token, "sentry") == 0 && block == 0){
-        fscanf(stdin, "%s", token);
-        if(strcmp(token, "\n") == 0 || strcmp(token, " ") == 0){
-          printf("-> Invalid command.\n");
-          continue;
+        if(sscanf(buffer, "%s %d %s %s%c", token, &key, succ_ip, succ_gate, &eol) > 0 && eol == '\n'){
+          /*test for unique case when there are only 2 servers*/
+          /*otherwise do the normal procedure*/
+          /*tcp_client = init_tcp_cl(succ_ip, succ_gate);
+          tcp_client = request_tcp_cl(tcp_client, "SUCCCONF\n");
+          close_tcp_cl(tcp_client);*/
+          printf("Chave : %d\n", key);
+          printf("Next server ip: %s\n", succ_ip);
+          printf("Next server ip: %s\n", succ_gate);
+          block = 1;
+          printf("-> Server sentered.\n");
         }
         else{
-          printf("%s -this the key\n", token);
-          key = atoi(token);
-          /*value of the successors ip*/
-          fscanf(stdin, "%s", token);
-          if(strcmp(token, "\n") == 0 || strcmp(token, " ") == 0){
-            printf("-> Invalid command.\n");
-            continue;
-          }
-          else{
-            printf("%s -this is succ_ip\n", token);
-            strcpy(succ_ip, token);
-            /*value of the successors gate*/
-            fscanf(stdin, "%s", token);
-            if(strcmp(token, "\n") == 0 || strcmp(token, " ") == 0){
-              printf("-> Invalid command.\n");
-              continue;
-            }
-            else{
-              printf("%s -this is succ_gate\n", token);
-              strcpy(succ_gate, token);
-            }
-          }
+          printf("-> The command \\sentry is of type \"sentry i succ.ip succ.gate\". Where i is a key.\n");
+          fflush(stdin);
+          memset(buffer,0,sizeof(buffer));
+          memset(token,0,sizeof(token));
         }
-
-        /*test for unique case when there are only 2 servers*/
-        /*otherwise do the normal procedure*/
-        /*tcp_client = init_tcp_cl(succ_ip, succ_gate);
-        tcp_client = request_tcp_cl(tcp_client, "SUCCCONF\n");
-        close_tcp_cl(tcp_client);*/
-
-        block = 1;
-        printf("-> Server sentered.\n");
       }
 
       /*LEAVE: ... */
-      else if(strcmp(token, "leave\n") == 0 && block == 1){
+      else if(strcmp(buffer, "leave\n") == 0 && block == 1){
           /* do stuff */
+
+          block = 0;
+          printf("-> Left the ring.\n");
       }
 
       /* FALTA ADICIONAR O ESTADO DO SERVIDOR!!! */
-      else if(strcmp(token, "show\n") == 0 && block == 1){
+      else if(strcmp(buffer, "show\n") == 0 && block == 1){
           printf("-> Key: %d\n-> IP: %s\n-> PORT: %s\n-> SuccIP: %s\n"
                     "-> SuccPORT: %s\n", key, argv[1], argv[2],
                       succ_ip, succ_gate);
@@ -168,16 +152,23 @@ int main(int argc, char *argv[]){
           /* do stuff */
       }
       /*EXIT: exits the application successfully*/
-      else if(strcmp(token, "exit") == 0){
+      else if(strcmp(buffer, "exit\n") == 0){
           printf("\nExiting the application...\n");
           exit_flag = 1;
       }
       /*Invalid command, ignores it*/
-      else printf("-> Invalid command.\n");
+      else{
+        printf("-> Invalid command.\n");
+        fflush(stdin);
+        memset(buffer,0,sizeof(buffer));
+        memset(token,0,sizeof(token));
+      }
     }
   }
   close_tcp_sv(tcp_server);
   close_udp_sv(udp_server);
+  free(buffer);
+  free(token);
   exit(EXIT_SUCCESS);
 }
 
