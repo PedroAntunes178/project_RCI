@@ -21,7 +21,6 @@ int main(int argc, char *argv[]){
 
   if(argc != 3) exit(1);
 
-  int block = 0;
   int key;
   char* succ_ip;
   succ_ip = (char*)malloc((Max+1)*sizeof(char));
@@ -31,7 +30,7 @@ int main(int argc, char *argv[]){
   s_succ_ip = (char*)malloc((Max+1)*sizeof(char));
   char* s_succ_gate;
   s_succ_gate = (char*)malloc((Max+1)*sizeof(char));
-  int exit_flag = 0;
+
   struct Server udp_server = init_udp_sv(argv[2]);
   struct Server tcp_server = init_tcp_sv(argv[2]);
   struct Client tcp_client;
@@ -39,11 +38,14 @@ int main(int argc, char *argv[]){
   fd_set rfds;
   enum {idle, busy} state;
   int maxfd, counter, afd = 5;
+
   char* buffer;
   buffer = (char*)malloc((5*Max+1)*sizeof(char));
   char* token;
   token = (char*)malloc((Max+1)*sizeof(char));
   char eol = 0;
+  int block = 0;
+  int exit_flag = 0;
 
   state=idle;
   while(!(exit_flag)){
@@ -82,7 +84,7 @@ int main(int argc, char *argv[]){
       sscanf(buffer, "%s", token);
       /*NEW: creating the first server*/
       if(strcmp(token, "new") == 0 && block == 0){
-        if(sscanf(buffer, "%s %d%c", token, &key, &eol) == 3 && eol == '\n'){
+        if(sscanf(buffer, "%*s %d%c", &key, &eol) == 2 && eol == '\n'){
           strcpy(succ_ip, argv[1]);
           strcpy(succ_gate, argv[2]);
           strcpy(s_succ_ip, argv[1]);
@@ -108,9 +110,9 @@ int main(int argc, char *argv[]){
         printf("-> Server entered.\n");
       }
 
-      /*SENTRY: adding a server specifying it's successor*/
+      /*SENTRY: adding a server specifying it's successor */
       else if(strcmp(token, "sentry") == 0 && block == 0){
-        if(sscanf(buffer, "%s %d %s %s%c", token, &key, succ_ip, succ_gate, &eol) == 5 && eol == '\n'){
+        if(sscanf(buffer, "%*s %d %s %s%c", &key, succ_ip, succ_gate, &eol) == 4 && eol == '\n'){
           /*test for unique case when there are only 2 servers*/
           /*otherwise do the normal procedure*/
           /*tcp_client = init_tcp_cl(succ_ip, succ_gate);
@@ -157,9 +159,6 @@ int main(int argc, char *argv[]){
       /*Invalid command, ignores it*/
       else{
         printf("-> Invalid command.\n");
-        fflush(stdin);
-        memset(buffer,0,sizeof(buffer));
-        memset(token,0,sizeof(token));
       }
     }
   }
