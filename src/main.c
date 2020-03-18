@@ -13,7 +13,7 @@
 
 #include "server.h"
 
-#define Max 20
+#define Max 100
 
 int max(int, int);
 
@@ -23,13 +23,13 @@ int main(int argc, char *argv[]){
 
   int key;
   char* succ_ip;
-  succ_ip = (char*)malloc((Max+1)*sizeof(char));
+  succ_ip = malloc((Max+1)*sizeof(char));
   char* succ_gate;
-  succ_gate = (char*)malloc((Max+1)*sizeof(char));
+  succ_gate = malloc((Max+1)*sizeof(char));
   char* s_succ_ip;
-  s_succ_ip = (char*)malloc((Max+1)*sizeof(char));
+  s_succ_ip = malloc((Max+1)*sizeof(char));
   char* s_succ_gate;
-  s_succ_gate = (char*)malloc((Max+1)*sizeof(char));
+  s_succ_gate = malloc((Max+1)*sizeof(char));
 
   struct Server udp_server = init_udp_sv(argv[2]);
   struct Server tcp_server = init_tcp_sv(argv[2]);
@@ -40,7 +40,7 @@ int main(int argc, char *argv[]){
   int maxfd, counter, afd = 5;
 
   char* buffer;
-  buffer = (char*)malloc((5*Max+1)*sizeof(char));
+  buffer = (char*)malloc((Max+1)*sizeof(char));
   char* token;
   token = (char*)malloc((Max+1)*sizeof(char));
   char eol = 0;
@@ -80,7 +80,7 @@ int main(int argc, char *argv[]){
     READING INPUT FROM KEYBOARD
     **************************/
     if(FD_ISSET(0, &rfds)){
-      fgets(buffer, sizeof(buffer), stdin);
+      fgets(buffer, Max, stdin);
       sscanf(buffer, "%s", token);
       /*NEW: creating the first server*/
       if(strcmp(token, "new") == 0 && block == 0){
@@ -95,9 +95,8 @@ int main(int argc, char *argv[]){
         }
         else{
           printf("-> The command \\new is of type \"new i\". Where i is a key.\n");
-          fflush(stdin);
-          memset(buffer,0,sizeof(buffer));
-          memset(token,0,sizeof(token));
+          memset(buffer, 0, Max);
+          memset(token, 0, Max);
         }
       }
 
@@ -126,9 +125,8 @@ int main(int argc, char *argv[]){
         }
         else{
           printf("-> The command \\sentry is of type \"sentry i succ.ip succ.gate\". Where i is a key.\n");
-          fflush(stdin);
-          memset(buffer,0,sizeof(buffer));
-          memset(token,0,sizeof(token));
+          memset(buffer, 0, Max);
+          memset(token, 0, Max);
         }
       }
 
