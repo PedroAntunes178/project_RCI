@@ -122,6 +122,7 @@ int main(int argc, char *argv[]){
         printf("Received message: %s\n", tcp_client.buffer);
       }
       else{
+        freeaddrinfo(tcp_client.res);
         close(tcp_client.fd);
         state = idle;
       }
@@ -164,7 +165,8 @@ int main(int argc, char *argv[]){
       /*SENTRY: adding a server specifying it's successor */
       else if(strcmp(token, "sentry") == 0 && block == 0){
         if(sscanf(buffer, "%*s %d %d %s %s%c", &key, &succ_key, succ_ip, succ_gate, &eol) == 5 && eol == '\n'){
-
+          strcpy(msg, "oi outra porta\n");
+          tcp_client = init_tcp_cl(succ_ip, succ_gate);
             /* do stuff */
 
           printf("Chave : %d\n", key);
