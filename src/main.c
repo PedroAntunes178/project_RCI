@@ -111,7 +111,7 @@ int main(int argc, char *argv[]){
 
     /* WAITING TO READ AS TCP CLIENT */
     if(FD_ISSET(tcp_client.fd, &rfds)){
-      if((tcp_client.n = write(tcp_client.newfd, tcp_client.buffer, tcp_client.n)) != 0){
+      if((tcp_client.n = write(tcp_client.fd, tcp_client.buffer, tcp_client.n)) != 0){
         if(tcp_client.n == -1) /*error*/ exit(1);
 
         write(1, "client: ", 8);
