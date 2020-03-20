@@ -1,4 +1,4 @@
-#include <unistd.h>
+#inc#include <unistd.h>
 #include <stdlib.h>
 #include <sys/types.h>
 #include <sys/socket.h>
@@ -26,6 +26,7 @@ struct Client init_tcp_cl(char* ip, char* gate){
   client.n = connect(client.fd, client.res->ai_addr, client.res->ai_addrlen);
   if(client.n == -1) /*error*/ exit(1);
 
+  return(client);
 }
 
 struct Client request_tcp_cl(struct Client client, char* msg){
