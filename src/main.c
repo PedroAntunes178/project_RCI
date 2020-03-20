@@ -36,15 +36,16 @@ int main(int argc, char *argv[]){
   struct Server tcp_server = init_tcp_sv(argv[2]);
   struct Client udp_client;
   struct Client tcp_client;
-  tcp_client.fd = -1;
   fd_set rfds;
   enum {idle, busy} state;
-  int maxfd, counter, newfd = 5, afd = 5;
+  int maxfd, counter, newfd = -1, afd = -1;
 
   char* buffer;
   buffer = (char*)malloc((Max+1)*sizeof(char));
   char* token;
   token = (char*)malloc((Max+1)*sizeof(char));
+  char* msg;
+  msg = (char*)malloc((Max+1)*sizeof(char));
   char eol = 0;
   int block = 0;
   int exit_flag = 0;
@@ -52,18 +53,14 @@ int main(int argc, char *argv[]){
   state=idle;
   while(!(exit_flag)){
     FD_ZERO(&rfds);
-    FD_SET(udp_server.fd, &rfds);
-    /*sprintf(buffer, "%d", udp_server.fd);
-    printf("udp : %s\n", buffer);*/
-    FD_SET(tcp_server.fd, &rfds);
-    /*sprintf(buffer, "%d", tcp_server.fd);
-    printf("tcp : %s\n", buffer);*/
     FD_SET(0, &rfds);
+    FD_SET(udp_server.fd, &rfds);
+    FD_SET(tcp_server.fd, &rfds);
+    maxfd = max(udp_server.fd, tcp_server.fd) + 1;
     if(tcp_client.fd != -1){
       FD_SET(tcp_client.fd, &rfds);
       maxfd = max(maxfd, tcp_client.fd);
     }
-    maxfd = max(udp_server.fd, tcp_server.fd) + 1;
     if(state==busy){
       FD_SET(afd, &rfds);
       maxfd = max(maxfd, afd) + 1;
@@ -85,8 +82,13 @@ int main(int argc, char *argv[]){
             &tcp_server.addrlen)) == -1) /*error*/ exit(1);
       printf("CONNECTION DONE\n");
       switch (state) {
-        case idle: afd = newfd; state = busy; break;
-        case busy: close(newfd);
+        case idle:
+          afd = newfd;
+          state = busy;
+          break;
+        case busy:
+          //send message sying "I'm busy"
+          close(newfd);
       }
     }
 
@@ -96,16 +98,33 @@ int main(int argc, char *argv[]){
         if(tcp_server.n == -1) /*error*/ exit(1);
         printf("Received message: %s\n", tcp_server.buffer);
       }
+      else if((tcp_server.n = write(tcp_server.newfd, tcp_server.buffer, tcp_server.n)) != 0){
+        if (tcp_server.n==-1) /*error*/ exit(1);
+        write(1, "Server: ", 8);
+        write(1, msg, tcp_server.n);
+      }
       else{
-        close(afd); state = idle;
+        close(afd);
+        state = idle;
       }
     }
 
     /* WAITING TO READ AS TCP CLIENT */
     if(FD_ISSET(tcp_client.fd, &rfds)){
-      tcp_client.n = read(tcp_client.fd, tcp_client.buffer, 128);
-      if(tcp_client.n == -1) exit(1);
-      printf("echo1: %d", tcp_client.fd);
+      if((tcp_client.n = write(tcp_client.newfd, tcp_client.buffer, tcp_client.n)) != 0){
+        if(tcp_client.n == -1) /*error*/ exit(1);
+
+        write(1, "client: ", 8);
+        write(1, msg, tcp_client.n);
+      }
+      else if((tcp_client.n = read(tcp_client.fd, tcp_client.buffer, 128)) != 0){
+        if(tcp_client.n == -1) /*error*/ exit(1);
+        printf("Received message: %s\n", tcp_client.buffer);
+      }
+      else{
+        close(tcp_client.fd);
+        state = idle;
+      }
     }
 
     /**************************
@@ -145,11 +164,9 @@ int main(int argc, char *argv[]){
       /*SENTRY: adding a server specifying it's successor */
       else if(strcmp(token, "sentry") == 0 && block == 0){
         if(sscanf(buffer, "%*s %d %d %s %s%c", &key, &succ_key, succ_ip, succ_gate, &eol) == 5 && eol == '\n'){
-          /*test for unique case when there are only 2 servers*/
-          /*otherwise do the normal procedure*/
-          /*tcp_client = init_tcp_cl(succ_ip, succ_gate);
-          tcp_client = request_tcp_cl(tcp_client, "SUCCCONF\n");
-          close_tcp_cl(tcp_client);*/
+
+            /* do stuff */
+
           printf("Chave : %d\n", key);
           printf("Next server ip: %s\n", succ_ip);
           printf("Next server ip: %s\n", succ_gate);
