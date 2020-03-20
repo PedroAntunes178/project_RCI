@@ -22,6 +22,7 @@ int main(int argc, char *argv[]){
   if(argc != 3) exit(1);
 
   int key;
+  int succ_key;
   char* succ_ip;
   succ_ip = malloc((Max+1)*sizeof(char));
   char* succ_gate;
@@ -33,11 +34,12 @@ int main(int argc, char *argv[]){
 
   struct Server udp_server = init_udp_sv(argv[2]);
   struct Server tcp_server = init_tcp_sv(argv[2]);
-  struct Client tcp_client;
   struct Client udp_client;
+  struct Client tcp_client;
+  tcp_client.fd = -1;
   fd_set rfds;
   enum {idle, busy} state;
-  int maxfd, counter, afd = 5;
+  int maxfd, counter, newfd = 5, afd = 5;
 
   char* buffer;
   buffer = (char*)malloc((Max+1)*sizeof(char));
@@ -56,12 +58,16 @@ int main(int argc, char *argv[]){
     FD_SET(tcp_server.fd, &rfds);
     /*sprintf(buffer, "%d", tcp_server.fd);
     printf("tcp : %s\n", buffer);*/
+    FD_SET(0, &rfds);
+    if(tcp_client.fd != -1){
+      FD_SET(tcp_client.fd, &rfds);
+      maxfd = max(maxfd, tcp_client.fd);
+    }
+    maxfd = max(udp_server.fd, tcp_server.fd) + 1;
     if(state==busy){
       FD_SET(afd, &rfds);
       maxfd = max(maxfd, afd) + 1;
     }
-    FD_SET(0, &rfds);
-    maxfd = max(udp_server.fd, tcp_server.fd) + 1;
 
     counter = select(maxfd, &rfds, (fd_set*)NULL, (fd_set*)NULL, (struct timeval *)NULL);
 
@@ -72,8 +78,34 @@ int main(int argc, char *argv[]){
       udp_server = listen_udp_sv(udp_server);
     }
 
+    /* WAITING FOR CONNECTING AS TCP SERVER*/
     if(FD_ISSET(tcp_server.fd, &rfds)){
-      tcp_server = listen_tcp_sv(tcp_server);
+      tcp_server.addrlen = sizeof(tcp_server.addr);
+      if((tcp_server.newfd = accept(tcp_server.fd, (struct sockaddr*) &tcp_server.addr,
+            &tcp_server.addrlen)) == -1) /*error*/ exit(1);
+      printf("CONNECTION DONE\n");
+      switch (state) {
+        case idle: afd = newfd; state = busy; break;
+        case busy: close(newfd);
+      }
+    }
+
+    /* WAITING TO READ AS TCP SERVER*/
+    if(FD_ISSET(afd, &rfds)){
+      if((tcp_server.n = read(afd, tcp_server.buffer, 128)) != 0){
+        if(tcp_server.n == -1) /*error*/ exit(1);
+        printf("Received message: %s\n", tcp_server.buffer);
+      }
+      else{
+        close(afd); state = idle;
+      }
+    }
+
+    /* WAITING TO READ AS TCP CLIENT */
+    if(FD_ISSET(tcp_client.fd, &rfds)){
+      tcp_client.n = read(tcp_client.fd, tcp_client.buffer, 128);
+      if(tcp_client.n == -1) exit(1);
+      printf("echo1: %d", tcp_client.fd);
     }
 
     /**************************
@@ -82,6 +114,7 @@ int main(int argc, char *argv[]){
     if(FD_ISSET(0, &rfds)){
       fgets(buffer, Max, stdin);
       sscanf(buffer, "%s", token);
+
       /*NEW: creating the first server*/
       if(strcmp(token, "new") == 0 && block == 0){
         if(sscanf(buffer, "%*s %d%c", &key, &eol) == 2 && eol == '\n'){
@@ -89,8 +122,8 @@ int main(int argc, char *argv[]){
           strcpy(succ_gate, argv[2]);
           strcpy(s_succ_ip, argv[1]);
           strcpy(s_succ_gate, argv[2]);
+          tcp_client = init_tcp_cl(succ_ip, succ_gate);
           block = 1;
-          printf("Chave : %d\n", key);
           printf("-> Ring created.\n");
         }
         else{
@@ -111,7 +144,7 @@ int main(int argc, char *argv[]){
 
       /*SENTRY: adding a server specifying it's successor */
       else if(strcmp(token, "sentry") == 0 && block == 0){
-        if(sscanf(buffer, "%*s %d %s %s%c", &key, succ_ip, succ_gate, &eol) == 4 && eol == '\n'){
+        if(sscanf(buffer, "%*s %d %d %s %s%c", &key, &succ_key, succ_ip, succ_gate, &eol) == 5 && eol == '\n'){
           /*test for unique case when there are only 2 servers*/
           /*otherwise do the normal procedure*/
           /*tcp_client = init_tcp_cl(succ_ip, succ_gate);
@@ -133,9 +166,13 @@ int main(int argc, char *argv[]){
       /*LEAVE: ... */
       else if(strcmp(buffer, "leave\n") == 0 && block == 1){
           /* do stuff */
+          tcp_client.n = write(tcp_client.fd, "msg", sizeof("msg"));
+          if(tcp_client.n == -1) /*error*/ exit(1);
 
-          block = 0;
-          printf("-> Left the ring.\n");
+          write(1, "client: ", 8);
+          write(1, "msg", tcp_client.n);
+
+          block = 1;
       }
 
       /* FALTA ADICIONAR O ESTADO DO SERVIDOR!!! */
