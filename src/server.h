@@ -14,7 +14,7 @@ struct Server {
 };
 
 struct Client {
-  int fd = -1;
+  int fd;
   int errcode;
   ssize_t n;
   socklen_t addrlen;
