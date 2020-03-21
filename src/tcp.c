@@ -90,13 +90,12 @@ int take_a_decision(struct Program_connection received, int used_fd, struct Prog
   /*SUCC: Um servidor informa o seu predecessor que o seu sucessor é succ com endereço
   IP succ.IP e porto succ.port.*/
   else if(strcmp(token, "SUCC") == 0){
-    if(sscanf(received.buffer, "%*s %d %s %s%c", &succ_key, succ_ip, succ_gate, &eol) == 4 && eol == '\n'){
-      my_data.s_succ_ip = succ_ip;
-      my_data.s_succ_gate = succ_gate;
-      printf("Entrou depois completo\n");
+    if(sscanf(received.buffer, "%*s %*d %s %s%c", my_data.s_succ_ip, my_data.s_succ_gate, &eol) == 3 && eol == '\n'){
+      printf("Entrou aqui, depois completo...\n");
     }
     else{
       printf("-> The command \\SUCC is of type \"SUCC succ succ.IP succ.port\\n\".\n");
+      return -1;
     }
   }
 

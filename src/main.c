@@ -129,6 +129,7 @@ int main(int argc, char *argv[]){
       /*NEW: creating the first server*/
       if(strcmp(token, "new") == 0 && block == 0){
         if(sscanf(buffer, "%*s %d%c", &my_data.key, &eol) == 2 && eol == '\n'){
+          my_data.succ_key = my_data.key;
           strcpy(my_data.succ_ip, argv[1]);
           strcpy(my_data.succ_gate, argv[2]);
           strcpy(my_data.s_succ_ip, argv[1]);
@@ -156,15 +157,15 @@ int main(int argc, char *argv[]){
       /*SENTRY: adding a server specifying it's successor */
       else if(strcmp(token, "sentry") == 0 && block == 0){
         if(sscanf(buffer, "%*s %d %d %s %s%c", &my_data.key, &my_data.succ_key, my_data.succ_ip, my_data.succ_gate, &eol) == 5 && eol == '\n'){
-          strcpy(msg, "SUCCCONF\n");
           tcp_client = init_tcp_cl(my_data.succ_ip, my_data.succ_gate);
           state_cl = 1;
 
+          strcpy(msg, "SUCCCONF\n");
           tcp_client.n = write(tcp_client.fd, msg, MAX);
           if(tcp_client.n == -1) /*error*/ exit(1);
 
           printf("Key : %d\n", my_data.key);
-          printf("Next server key: %d\n", my_data.key);
+          printf("Next server key: %d\n", my_data.succ_key);
           printf("Next server ip: %s\n", my_data.succ_ip);
           printf("Next server gate: %s\n", my_data.succ_gate);
           block = 1;
@@ -190,8 +191,8 @@ int main(int argc, char *argv[]){
 
       /* FALTA ADICIONAR O ESTADO DO SERVIDOR!!! */
       else if(strcmp(buffer, "show\n") == 0 && block == 1){
-          printf("-> Key: %d\n-> IP: %s\n-> PORT: %s\n-> SuccIP: %s\n"
-                    "-> SuccPORT: %s\n", my_data.key, argv[1], argv[2],
+          printf("-> Key: %d\n-> IP: %s\n-> PORT: %s\n-> SuccKey: %d\n-> SuccIP: %s\n"
+                    "-> SuccPORT: %s\n", my_data.key, argv[1], argv[2], my_data.succ_key,
                       my_data.succ_ip, my_data.succ_gate);
       }
 
