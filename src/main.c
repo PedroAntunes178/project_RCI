@@ -136,6 +136,7 @@ int main(int argc, char *argv[]){
           strcpy(s_succ_ip, argv[1]);
           strcpy(s_succ_gate, argv[2]);
           block = 1;
+          printf("Chave : %d\n", key);
           printf("-> Ring created.\n");
         }
         else{
