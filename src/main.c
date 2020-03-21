@@ -22,11 +22,12 @@ int main(int argc, char *argv[]){
   if(argc != 3) exit(1);
 
   struct Program_data my_data;
+  my_data = init_program_data();
 
-  struct Connection udp_server = init_udp_sv(argv[2]);
-  struct Connection tcp_server = init_tcp_sv(argv[2]);
-  struct Connection udp_client;
-  struct Connection tcp_client;
+  struct Program_connection udp_server = init_udp_sv(argv[2]);
+  struct Program_connection tcp_server = init_tcp_sv(argv[2]);
+  struct Program_connection udp_client;
+  struct Program_connection tcp_client;
   tcp_client.fd = -1;
   fd_set rfds;
   int state_cl=0;
@@ -93,7 +94,7 @@ int main(int argc, char *argv[]){
         if(tcp_server.n == -1) /*error*/ exit(1);
         write(1, "received: ", 10);
         write(1, tcp_server.buffer, tcp_server.n);
-        take_a_decision(tcp_server, afd, succ_key, succ_ip, succ_gate);
+        take_a_decision(tcp_server, afd, my_data);
       }
       else{
         printf("Closed Server connection.\n");
@@ -108,7 +109,7 @@ int main(int argc, char *argv[]){
         if(tcp_client.n == -1) /*error*/ exit(1);//é aqui que está a retornar um erro
         write(1, "echo: ", 6);
         write(1, tcp_client.buffer, tcp_client.n);
-        take_a_decision(tcp_client, tcp_client.fd, succ_key, succ_ip, succ_gate);
+        take_a_decision(tcp_client, tcp_client.fd, my_data);
       }
       else{
         printf("Closed Client connection.\n");
@@ -127,13 +128,13 @@ int main(int argc, char *argv[]){
 
       /*NEW: creating the first server*/
       if(strcmp(token, "new") == 0 && block == 0){
-        if(sscanf(buffer, "%*s %d%c", &key, &eol) == 2 && eol == '\n'){
-          strcpy(succ_ip, argv[1]);
-          strcpy(succ_gate, argv[2]);
-          strcpy(s_succ_ip, argv[1]);
-          strcpy(s_succ_gate, argv[2]);
+        if(sscanf(buffer, "%*s %d%c", &my_data.key, &eol) == 2 && eol == '\n'){
+          strcpy(my_data.succ_ip, argv[1]);
+          strcpy(my_data.succ_gate, argv[2]);
+          strcpy(my_data.s_succ_ip, argv[1]);
+          strcpy(my_data.s_succ_gate, argv[2]);
           block = 1;
-          printf("Chave : %d\n", key);
+          printf("Key : %d\n", my_data.key);
           printf("-> Ring created.\n");
         }
         else{
@@ -154,20 +155,18 @@ int main(int argc, char *argv[]){
 
       /*SENTRY: adding a server specifying it's successor */
       else if(strcmp(token, "sentry") == 0 && block == 0){
-        if(sscanf(buffer, "%*s %d %d %s %s%c", &key, &succ_key, succ_ip, succ_gate, &eol) == 5 && eol == '\n'){
+        if(sscanf(buffer, "%*s %d %d %s %s%c", &my_data.key, &my_data.succ_key, my_data.succ_ip, my_data.succ_gate, &eol) == 5 && eol == '\n'){
           strcpy(msg, "SUCCCONF\n");
-          tcp_client = init_tcp_cl(succ_ip, succ_gate);
+          tcp_client = init_tcp_cl(my_data.succ_ip, my_data.succ_gate);
           state_cl = 1;
 
           tcp_client.n = write(tcp_client.fd, msg, MAX);
           if(tcp_client.n == -1) /*error*/ exit(1);
-          write(1, "client message: \n", 17);
-          write(1, msg, tcp_client.n);
-          /* do stuff */
 
-          printf("Chave : %d\n", key);
-          printf("Next server ip: %s\n", succ_ip);
-          printf("Next server ip: %s\n", succ_gate);
+          printf("Key : %d\n", my_data.key);
+          printf("Next server key: %d\n", my_data.key);
+          printf("Next server ip: %s\n", my_data.succ_ip);
+          printf("Next server gate: %s\n", my_data.succ_gate);
           block = 1;
           printf("-> Server sentered.\n");
         }
@@ -180,19 +179,20 @@ int main(int argc, char *argv[]){
 
       /*LEAVE: ... */
       else if(strcmp(buffer, "leave\n") == 0 && block == 1){
-          /* do stuff */
+        if(state_cl){
           freeaddrinfo(tcp_client.res);
           close(tcp_client.fd);
           state_cl = 0;
-          block = 0;
-          printf("-> Left the ring.\n");
+        }
+        block = 0;
+        printf("-> Left the ring.\n");
       }
 
       /* FALTA ADICIONAR O ESTADO DO SERVIDOR!!! */
       else if(strcmp(buffer, "show\n") == 0 && block == 1){
           printf("-> Key: %d\n-> IP: %s\n-> PORT: %s\n-> SuccIP: %s\n"
-                    "-> SuccPORT: %s\n", key, argv[1], argv[2],
-                      succ_ip, succ_gate);
+                    "-> SuccPORT: %s\n", my_data.key, argv[1], argv[2],
+                      my_data.succ_ip, my_data.succ_gate);
       }
 
       /*FIND: ... */
@@ -215,10 +215,7 @@ int main(int argc, char *argv[]){
   close(tcp_server.fd);
   freeaddrinfo(udp_server.res);
   close(udp_server.fd);
-  free(succ_ip);
-  free(succ_gate);
-  free(s_succ_ip);
-  free(s_succ_gate);
+  free_program_data(my_data);
   free(buffer);
   free(token);
   exit(EXIT_SUCCESS);
@@ -230,4 +227,21 @@ int max(int x, int y)
         return x;
     else
         return y;
+}
+
+struct Program_data init_program_data(){
+  struct Program_data init_data;
+  init_data.succ_ip = malloc((MAX+1)*sizeof(char));
+  init_data.succ_gate = malloc((MAX+1)*sizeof(char));
+  init_data.s_succ_ip = malloc((MAX+1)*sizeof(char));
+  init_data.s_succ_gate = malloc((MAX+1)*sizeof(char));
+  return init_data;
+}
+
+int free_program_data(struct Program_data free_data){
+  free(free_data.succ_ip);
+  free(free_data.succ_gate);
+  free(free_data.s_succ_ip);
+  free(free_data.s_succ_gate);
+  return 0;
 }

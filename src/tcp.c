@@ -1,3 +1,6 @@
+#include <sys/time.h>
+#include <sys/types.h>
+#include <unistd.h>
 #include <unistd.h>
 #include <stdlib.h>
 #include <sys/types.h>
@@ -6,6 +9,7 @@
 #include <arpa/inet.h>
 #include <netdb.h>
 #include <string.h>
+#include <stdio.h>
 
 #include "server.h"
 
@@ -58,6 +62,7 @@ int take_a_decision(struct Program_connection received, int used_fd, struct Prog
 
   int key;
   int succ_key;
+  char eol = 0;
   char* succ_ip;
   succ_ip = malloc((MAX+1)*sizeof(char));
   char* succ_gate;
@@ -70,8 +75,8 @@ int take_a_decision(struct Program_connection received, int used_fd, struct Prog
   sscanf(received.buffer, "%s", token);
 
   /*SUCCCONF: Um servidor informa outro que este se tornou o seu sucessor. */
-  if(strcmp(token, "SUCCCONF") == 0 && block == 0){
-    if(sscanf(buffer, "%*s%c", &eol) == 1 && eol == '\n'){
+  if(strcmp(token, "SUCCCONF") == 0){
+    if(sscanf(received.buffer, "%*s%c", &eol) == 1 && eol == '\n'){
       sprintf(msg, "SUCC %d %s %s\n", my_data.succ_key, my_data.succ_ip, my_data.succ_gate);
       received.n = write(used_fd, msg, strlen(msg));
       if (received.n==-1) /*error*/ exit(1);
@@ -84,8 +89,8 @@ int take_a_decision(struct Program_connection received, int used_fd, struct Prog
 
   /*SUCC: Um servidor informa o seu predecessor que o seu sucessor é succ com endereço
   IP succ.IP e porto succ.port.*/
-  else if(strcmp(token, "SUCC") == 0 && block == 0){
-    if(sscanf(buffer, "%*s %d %s %s%c", &succ_key, succ_ip, succ_gate, &eol) == 4 && eol == '\n'){
+  else if(strcmp(token, "SUCC") == 0){
+    if(sscanf(received.buffer, "%*s %d %s %s%c", &succ_key, succ_ip, succ_gate, &eol) == 4 && eol == '\n'){
       my_data.s_succ_ip = succ_ip;
       my_data.s_succ_gate = succ_gate;
       printf("Entrou depois completo\n");
@@ -100,8 +105,8 @@ int take_a_decision(struct Program_connection received, int used_fd, struct Prog
   IP i.IP e porto i.port. (2) Um servidor informa o seu atual predecessor que o
   servidor de chave i, endereço IP i.IP e porto i.port pretende entrar no anel,
   para que o predecessor estabeleça o servidor entrante como seu sucessor.*/
-  else if(strcmp(token, "NEW") == 0 && block == 0){
-    if(sscanf(buffer, "%*s %d%c", &key, &eol) == 2 && eol == '\n'){
+  else if(strcmp(token, "NEW") == 0){
+    if(sscanf(received.buffer, "%*s %d%c", &key, &eol) == 2 && eol == '\n'){
     }
     else{
     }
@@ -110,8 +115,8 @@ int take_a_decision(struct Program_connection received, int used_fd, struct Prog
   /*FND: Um servidor delega no seu sucessor a pesquisa da chave k, a qual foi iniciada pelo
   servidor i com endereço IP i.IP e porto i.port. (O caráter \n delimita todas
   as mensagens enviadas sobre TCP.)*/
-  else if(strcmp(token, "FND") == 0 && block == 0){
-    if(sscanf(buffer, "%*s %d%c", &key, &eol) == 2 && eol == '\n'){
+  else if(strcmp(token, "FND") == 0){
+    if(sscanf(received.buffer, "%*s %d%c", &key, &eol) == 2 && eol == '\n'){
     }
     else{
     }
@@ -122,8 +127,8 @@ int take_a_decision(struct Program_connection received, int used_fd, struct Prog
   succ.port. Esta mensagem é enviada sobre uma sessão TCP criada para o
   4efeito, do servidor que pretende enviar a mensagem para o servidor que iniciou a
   pesquisa.*/
-   else if(strcmp(token, "KEY") == 0 && block == 0){
-     if(sscanf(buffer, "%*s %d%c", &key, &eol) == 2 && eol == '\n'){
+   else if(strcmp(token, "KEY") == 0){
+     if(sscanf(received.buffer, "%*s %d%c", &key, &eol) == 2 && eol == '\n'){
      }
      else{
      }
