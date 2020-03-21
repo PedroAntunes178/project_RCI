@@ -12,20 +12,20 @@ struct Connection {
   char buffer[128];
 };
 
-struct Server init_udp_sv(char*);
-struct Server listen_udp_sv(struct Server);
-void close_udp_sv(struct Server);
+struct Connection init_udp_sv(char*);
+struct Connection listen_udp_sv(struct Connection);
+void close_udp_sv(struct Connection);
 
-struct Server init_tcp_sv(char*);
-struct Server listen_tcp_sv(struct Server);
-void close_tcp_sv(struct Server);
+struct Connection init_tcp_sv(char*);
+struct Connection listen_tcp_sv(struct Connection);
+void close_tcp_sv(struct Connection);
 
-struct Client init_udp_cl(char*, char*);
-struct Client request_udp_cl(struct Client, char*);
-void close_udp_cl(struct Client);
+struct Connection init_udp_cl(char*, char*);
+struct Connection request_udp_cl(struct Connection, char*);
+void close_udp_cl(struct Connection);
 
-struct Client init_tcp_cl(char*, char*);
-struct Client request_tcp_cl(struct Client, char*);
-void close_tcp_cl(struct Client);
+struct Connection init_tcp_cl(char*, char*);
+struct Connection request_tcp_cl(struct Connection, char*);
+void close_tcp_cl(struct Connection);
 
 #endif

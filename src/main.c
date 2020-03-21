@@ -59,6 +59,7 @@ int main(int argc, char *argv[]){
     FD_SET(tcp_server.fd, &rfds);
     maxfd = max(udp_server.fd, tcp_server.fd) + 1;
     if(state_cl){
+      printf("fd_set cl\n");
       FD_SET(tcp_client.fd, &rfds);
       maxfd = max(maxfd, tcp_client.fd) + 1;
     }

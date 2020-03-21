@@ -9,9 +9,9 @@
 
 #include "server.h"
 
-struct Client init_tcp_cl(char* ip, char* gate){
+struct Connection init_tcp_cl(char* ip, char* gate){
 
-  struct Client client;
+  struct Connection client;
 
   client.fd = socket(AF_INET, SOCK_STREAM, 0); //TCP socket
   if(client.fd == -1) /*error*/ exit(1);
@@ -29,7 +29,7 @@ struct Client init_tcp_cl(char* ip, char* gate){
   return(client);
 }
 
-struct Client request_tcp_cl(struct Client client, char* msg){
+struct Connection request_tcp_cl(struct Connection client, char* msg){
 
   client.n = write(client.fd, msg, sizeof(msg));
   if(client.n == -1) /*error*/ exit(1);
@@ -45,10 +45,9 @@ struct Client request_tcp_cl(struct Client client, char* msg){
 
 }
 
-void close_tcp_cl(struct Client client){
+void close_tcp_cl(struct Connection client){
 
   freeaddrinfo(client.res);
   close(client.fd);
-  exit(0);
-
+  
 }
