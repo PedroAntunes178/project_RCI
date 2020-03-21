@@ -32,10 +32,10 @@ int main(int argc, char *argv[]){
   char* s_succ_gate;
   s_succ_gate = malloc((MAX+1)*sizeof(char));
 
-  struct Server udp_server = init_udp_sv(argv[2]);
-  struct Server tcp_server = init_tcp_sv(argv[2]);
-  struct Client udp_client;
-  struct Client tcp_client;
+  struct Connection udp_server = init_udp_sv(argv[2]);
+  struct Connection tcp_server = init_tcp_sv(argv[2]);
+  struct Connection udp_client;
+  struct Connection tcp_client;
   tcp_client.fd = -1;
   fd_set rfds;
   int state_cl=0;
@@ -63,6 +63,7 @@ int main(int argc, char *argv[]){
       maxfd = max(maxfd, tcp_client.fd) + 1;
     }
     if(state_sv){
+      //printf("fd_set sv\n");
       FD_SET(afd, &rfds);
       maxfd = max(maxfd, afd) + 1;
     }
@@ -79,12 +80,13 @@ int main(int argc, char *argv[]){
     /* WAITING FOR CONNECTING AS TCP SERVER*/
     if(FD_ISSET(tcp_server.fd, &rfds)){
       tcp_server.addrlen = sizeof(tcp_server.addr);
-      if((tcp_server.newfd = accept(tcp_server.fd, (struct sockaddr*) &tcp_server.addr,
+      if((newfd = accept(tcp_server.fd, (struct sockaddr*) &tcp_server.addr,
             &tcp_server.addrlen)) == -1) /*error*/ exit(1);
       printf("CONNECTION DONE\n");
       if(!(state_sv)){
-          afd = newfd;
-          state_sv = 1;
+        afd = newfd;
+        printf("newfd : %d\n", newfd);
+        state_sv = 1;
       }
       else{
         //send message sying "I'm busy_sv"
@@ -94,15 +96,16 @@ int main(int argc, char *argv[]){
 
     /* WAITING TO READ AS TCP SERVER*/
     if(FD_ISSET(afd, &rfds)){
-      printf("2->DONE\n");
+      //printf("Entrou!!\n");
       if((tcp_server.n = read(afd, tcp_server.buffer, 128)) != 0){
-        if(tcp_server.n == -1) /*error*/ exit(1);
+        if(tcp_server.n == -1) /*error*/ exit(1);//é aqui que está a retornar um erro
         write(1, "received: ", 10);
         write(1, tcp_server.buffer, tcp_server.n);
-        tcp_server.n = write(tcp_server.newfd, tcp_server.buffer, tcp_server.n);
+        tcp_server.n = write(afd, tcp_server.buffer, tcp_server.n);
         if (tcp_server.n==-1) /*error*/ exit(1);
       }
       else{
+        printf("closed\n");
         close(afd);
         state_sv = 0;
       }
