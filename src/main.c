@@ -13,7 +13,7 @@
 
 #include "server.h"
 
-#define Max 100
+#define MAX 100
 
 int max(int, int);
 
@@ -24,44 +24,45 @@ int main(int argc, char *argv[]){
   int key;
   int succ_key;
   char* succ_ip;
-  succ_ip = malloc((Max+1)*sizeof(char));
+  succ_ip = malloc((MAX+1)*sizeof(char));
   char* succ_gate;
-  succ_gate = malloc((Max+1)*sizeof(char));
+  succ_gate = malloc((MAX+1)*sizeof(char));
   char* s_succ_ip;
-  s_succ_ip = malloc((Max+1)*sizeof(char));
+  s_succ_ip = malloc((MAX+1)*sizeof(char));
   char* s_succ_gate;
-  s_succ_gate = malloc((Max+1)*sizeof(char));
+  s_succ_gate = malloc((MAX+1)*sizeof(char));
 
   struct Server udp_server = init_udp_sv(argv[2]);
   struct Server tcp_server = init_tcp_sv(argv[2]);
   struct Client udp_client;
   struct Client tcp_client;
+  tcp_client.fd = -1;
   fd_set rfds;
-  enum {idle, busy} state;
-  int maxfd, counter, newfd = -1, afd = -1;
+  int state_cl=0;
+  int state_sv=0;
+  int maxfd, counter, newfd, afd = -1;
 
   char* buffer;
-  buffer = (char*)malloc((Max+1)*sizeof(char));
+  buffer = (char*)malloc((MAX+1)*sizeof(char));
   char* token;
-  token = (char*)malloc((Max+1)*sizeof(char));
+  token = (char*)malloc((MAX+1)*sizeof(char));
   char* msg;
-  msg = (char*)malloc((Max+1)*sizeof(char));
+  msg = (char*)malloc((MAX+1)*sizeof(char));
   char eol = 0;
   int block = 0;
   int exit_flag = 0;
 
-  state=idle;
   while(!(exit_flag)){
     FD_ZERO(&rfds);
     FD_SET(0, &rfds);
     FD_SET(udp_server.fd, &rfds);
     FD_SET(tcp_server.fd, &rfds);
     maxfd = max(udp_server.fd, tcp_server.fd) + 1;
-    if(tcp_client.fd != -1){
+    if(state_cl){
       FD_SET(tcp_client.fd, &rfds);
-      maxfd = max(maxfd, tcp_client.fd);
+      maxfd = max(maxfd, tcp_client.fd) + 1;
     }
-    if(state==busy){
+    if(state_sv){
       FD_SET(afd, &rfds);
       maxfd = max(maxfd, afd) + 1;
     }
@@ -81,50 +82,42 @@ int main(int argc, char *argv[]){
       if((tcp_server.newfd = accept(tcp_server.fd, (struct sockaddr*) &tcp_server.addr,
             &tcp_server.addrlen)) == -1) /*error*/ exit(1);
       printf("CONNECTION DONE\n");
-      switch (state) {
-        case idle:
+      if(!(state_sv)){
           afd = newfd;
-          state = busy;
-          break;
-        case busy:
-          //send message sying "I'm busy"
-          close(newfd);
+          state_sv = 1;
+      }
+      else{
+        //send message sying "I'm busy_sv"
+        close(newfd);
       }
     }
 
     /* WAITING TO READ AS TCP SERVER*/
     if(FD_ISSET(afd, &rfds)){
+      printf("2->DONE\n");
       if((tcp_server.n = read(afd, tcp_server.buffer, 128)) != 0){
         if(tcp_server.n == -1) /*error*/ exit(1);
-        printf("Received message: %s\n", tcp_server.buffer);
-      }
-      else if((tcp_server.n = write(tcp_server.newfd, tcp_server.buffer, tcp_server.n)) != 0){
+        write(1, "received: ", 10);
+        write(1, tcp_server.buffer, tcp_server.n);
+        tcp_server.n = write(tcp_server.newfd, tcp_server.buffer, tcp_server.n);
         if (tcp_server.n==-1) /*error*/ exit(1);
-        write(1, "Server: ", 8);
-        write(1, msg, tcp_server.n);
       }
       else{
         close(afd);
-        state = idle;
+        state_sv = 0;
       }
     }
 
     /* WAITING TO READ AS TCP CLIENT */
     if(FD_ISSET(tcp_client.fd, &rfds)){
-      if((tcp_client.n = write(tcp_client.fd, tcp_client.buffer, tcp_client.n)) != 0){
+      if((tcp_client.n = write(tcp_client.fd, msg, MAX)) != 0){
         if(tcp_client.n == -1) /*error*/ exit(1);
-
-        write(1, "client: ", 8);
+        write(1, "client: \n", 8);
         write(1, msg, tcp_client.n);
       }
-      else if((tcp_client.n = read(tcp_client.fd, tcp_client.buffer, 128)) != 0){
-        if(tcp_client.n == -1) /*error*/ exit(1);
-        printf("Received message: %s\n", tcp_client.buffer);
-      }
       else{
-        freeaddrinfo(tcp_client.res);
         close(tcp_client.fd);
-        state = idle;
+        state_cl = 0;
       }
     }
 
@@ -132,7 +125,7 @@ int main(int argc, char *argv[]){
     READING INPUT FROM KEYBOARD
     **************************/
     if(FD_ISSET(0, &rfds)){
-      fgets(buffer, Max, stdin);
+      fgets(buffer, MAX, stdin);
       sscanf(buffer, "%s", token);
 
       /*NEW: creating the first server*/
@@ -142,14 +135,13 @@ int main(int argc, char *argv[]){
           strcpy(succ_gate, argv[2]);
           strcpy(s_succ_ip, argv[1]);
           strcpy(s_succ_gate, argv[2]);
-          tcp_client = init_tcp_cl(succ_ip, succ_gate);
           block = 1;
           printf("-> Ring created.\n");
         }
         else{
           printf("-> The command \\new is of type \"new i\". Where i is a key.\n");
-          memset(buffer, 0, Max);
-          memset(token, 0, Max);
+          memset(buffer, 0, MAX);
+          memset(token, 0, MAX);
         }
       }
 
@@ -167,6 +159,7 @@ int main(int argc, char *argv[]){
         if(sscanf(buffer, "%*s %d %d %s %s%c", &key, &succ_key, succ_ip, succ_gate, &eol) == 5 && eol == '\n'){
           strcpy(msg, "oi outra porta\n");
           tcp_client = init_tcp_cl(succ_ip, succ_gate);
+          state_cl = 1;
             /* do stuff */
 
           printf("Chave : %d\n", key);
@@ -177,21 +170,16 @@ int main(int argc, char *argv[]){
         }
         else{
           printf("-> The command \\sentry is of type \"sentry i succ.ip succ.gate\". Where i is a key.\n");
-          memset(buffer, 0, Max);
-          memset(token, 0, Max);
+          memset(buffer, 0, MAX);
+          memset(token, 0, MAX);
         }
       }
 
       /*LEAVE: ... */
       else if(strcmp(buffer, "leave\n") == 0 && block == 1){
           /* do stuff */
-          tcp_client.n = write(tcp_client.fd, "msg", sizeof("msg"));
-          if(tcp_client.n == -1) /*error*/ exit(1);
-
-          write(1, "client: ", 8);
-          write(1, "msg", tcp_client.n);
-
-          block = 1;
+          block = 0;
+          printf("-> Left the ring.\n");
       }
 
       /* FALTA ADICIONAR O ESTADO DO SERVIDOR!!! */
