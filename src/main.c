@@ -222,7 +222,6 @@ int main(int argc, char *argv[]){
   freeaddrinfo(udp_server.res);
   close(udp_server.fd);
   free(succ_ip);
-  free(succ_key);
   free(succ_gate);
   free(s_succ_ip);
   free(s_succ_gate);
