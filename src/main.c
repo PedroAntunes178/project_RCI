@@ -106,7 +106,7 @@ int main(int argc, char *argv[]){
         if (tcp_server.n==-1) /*error*/ exit(1);
       }
       else{
-        printf("closed\n");
+        printf("Closed Server connection.\n");
         close(afd);
         state_sv = 0;
       }
@@ -120,7 +120,7 @@ int main(int argc, char *argv[]){
         write(1, tcp_client.buffer, tcp_client.n);
       }
       else{
-        printf("closed cl\n");
+        printf("Closed Client connection.\n");
         freeaddrinfo(tcp_client.res);
         close(tcp_client.fd);
         state_cl = 0;
@@ -190,6 +190,9 @@ int main(int argc, char *argv[]){
       /*LEAVE: ... */
       else if(strcmp(buffer, "leave\n") == 0 && block == 1){
           /* do stuff */
+          freeaddrinfo(tcp_client.res);
+          close(tcp_client.fd);
+          state_cl = 0;
           block = 0;
           printf("-> Left the ring.\n");
       }
