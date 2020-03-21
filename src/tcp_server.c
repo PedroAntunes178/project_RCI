@@ -31,28 +31,3 @@ struct Connection init_tcp_sv(char* gate){
 
   return server;
 }
-
-struct Connection listen_tcp_sv(struct Connection server){
-  int newfd;
-
-  server.addrlen = sizeof(server.addr);
-  if((newfd = accept(server.fd, (struct sockaddr*) &server.addr,
-        &server.addrlen)) == -1) /*error*/ exit(1);
-
-  server.n = read(newfd, server.buffer, 128);
-  if (server.n==-1) /*error*/ exit(1);
-  write(1, "received: ", 10);
-  write(1, server.buffer, server.n);
-
-  server.n = write(newfd, server.buffer, server.n);
-  if (server.n==-1) /*error*/ exit(1);
-
-  close(newfd);
-
-  return server;
-}
-
-void close_tcp_sv(struct Connection server){
-  freeaddrinfo(server.res);
-  close(server.fd);
-}

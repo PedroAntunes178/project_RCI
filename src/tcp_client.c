@@ -28,26 +28,3 @@ struct Connection init_tcp_cl(char* ip, char* gate){
 
   return(client);
 }
-
-struct Connection request_tcp_cl(struct Connection client, char* msg){
-
-  client.n = write(client.fd, msg, sizeof(msg));
-  if(client.n == -1) /*error*/ exit(1);
-
-  write(1, "client: ", 8);
-  write(1, msg, client.n);
-
-  client.n = read(client.fd, client.buffer, 128);
-  if(client.n == -1) /*error*/ exit(1);
-
-  write(1, "echo: ",6);
-  write(1,client.buffer,client.n);
-
-}
-
-void close_tcp_cl(struct Connection client){
-
-  freeaddrinfo(client.res);
-  close(client.fd);
-  
-}

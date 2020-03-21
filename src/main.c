@@ -114,12 +114,14 @@ int main(int argc, char *argv[]){
 
     /* WAITING TO READ AS TCP CLIENT */
     if(FD_ISSET(tcp_client.fd, &rfds)){
-      if((tcp_client.n = write(tcp_client.fd, msg, MAX)) != 0){
-        if(tcp_client.n == -1) /*error*/ exit(1);
-        write(1, "client: \n", 8);
-        write(1, msg, tcp_client.n);
+      if((tcp_client.n = read(tcp_client.fd, tcp_client.buffer, 128)) != 0){
+        if(tcp_client.n == -1) /*error*/ exit(1);//é aqui que está a retornar um erro
+        write(1, "echo: ", 6);
+        write(1, tcp_client.buffer, tcp_client.n);
       }
       else{
+        printf("closed cl\n");
+        freeaddrinfo(tcp_client.res);
         close(tcp_client.fd);
         state_cl = 0;
       }
@@ -162,10 +164,15 @@ int main(int argc, char *argv[]){
       /*SENTRY: adding a server specifying it's successor */
       else if(strcmp(token, "sentry") == 0 && block == 0){
         if(sscanf(buffer, "%*s %d %d %s %s%c", &key, &succ_key, succ_ip, succ_gate, &eol) == 5 && eol == '\n'){
-          strcpy(msg, "oi outra porta\n");
+          strcpy(msg, "Olá outra porta\n");
           tcp_client = init_tcp_cl(succ_ip, succ_gate);
           state_cl = 1;
-            /* do stuff */
+
+          tcp_client.n = write(tcp_client.fd, msg, MAX);
+          if(tcp_client.n == -1) /*error*/ exit(1);
+          write(1, "client message: \n", 17);
+          write(1, msg, tcp_client.n);
+          /* do stuff */
 
           printf("Chave : %d\n", key);
           printf("Next server ip: %s\n", succ_ip);
@@ -209,8 +216,16 @@ int main(int argc, char *argv[]){
       }
     }
   }
-  close_tcp_sv(tcp_server);
-  close_udp_sv(udp_server);
+
+  freeaddrinfo(tcp_server.res);
+  close(tcp_server.fd);
+  freeaddrinfo(udp_server.res);
+  close(udp_server.fd);
+  free(succ_ip);
+  free(succ_key);
+  free(succ_gate);
+  free(s_succ_ip);
+  free(s_succ_gate);
   free(buffer);
   free(token);
   exit(EXIT_SUCCESS);
