@@ -21,16 +21,7 @@ int main(int argc, char *argv[]){
 
   if(argc != 3) exit(1);
 
-  int key;
-  int succ_key;
-  char* succ_ip;
-  succ_ip = malloc((MAX+1)*sizeof(char));
-  char* succ_gate;
-  succ_gate = malloc((MAX+1)*sizeof(char));
-  char* s_succ_ip;
-  s_succ_ip = malloc((MAX+1)*sizeof(char));
-  char* s_succ_gate;
-  s_succ_gate = malloc((MAX+1)*sizeof(char));
+  struct Program_data my_data;
 
   struct Connection udp_server = init_udp_sv(argv[2]);
   struct Connection tcp_server = init_tcp_sv(argv[2]);
@@ -99,11 +90,10 @@ int main(int argc, char *argv[]){
     if(FD_ISSET(afd, &rfds)){
       //printf("Entrou!!\n");
       if((tcp_server.n = read(afd, tcp_server.buffer, 128)) != 0){
-        if(tcp_server.n == -1) /*error*/ exit(1);//é aqui que está a retornar um erro
+        if(tcp_server.n == -1) /*error*/ exit(1);
         write(1, "received: ", 10);
         write(1, tcp_server.buffer, tcp_server.n);
-        tcp_server.n = write(afd, tcp_server.buffer, tcp_server.n);
-        if (tcp_server.n==-1) /*error*/ exit(1);
+        take_a_decision(tcp_server, afd, succ_key, succ_ip, succ_gate);
       }
       else{
         printf("Closed Server connection.\n");
@@ -118,6 +108,7 @@ int main(int argc, char *argv[]){
         if(tcp_client.n == -1) /*error*/ exit(1);//é aqui que está a retornar um erro
         write(1, "echo: ", 6);
         write(1, tcp_client.buffer, tcp_client.n);
+        take_a_decision(tcp_client, tcp_client.fd, succ_key, succ_ip, succ_gate);
       }
       else{
         printf("Closed Client connection.\n");
@@ -164,7 +155,7 @@ int main(int argc, char *argv[]){
       /*SENTRY: adding a server specifying it's successor */
       else if(strcmp(token, "sentry") == 0 && block == 0){
         if(sscanf(buffer, "%*s %d %d %s %s%c", &key, &succ_key, succ_ip, succ_gate, &eol) == 5 && eol == '\n'){
-          strcpy(msg, "Olá outra porta\n");
+          strcpy(msg, "SUCCCONF\n");
           tcp_client = init_tcp_cl(succ_ip, succ_gate);
           state_cl = 1;
 
