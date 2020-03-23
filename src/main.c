@@ -23,6 +23,8 @@ int main(int argc, char *argv[]){
 
   struct Program_data my_data;
   my_data = init_program_data();
+  my_data.ip = argv[1];
+  my_data.gate = argv[2];
 
   struct Program_connection udp_server = init_udp_sv(argv[2]);
   struct Program_connection tcp_server = init_tcp_sv(argv[2]);
@@ -82,7 +84,12 @@ int main(int argc, char *argv[]){
         state_sv = 1;
       }
       else{
-        //send message sying "I'm busy_sv"
+        if(block){
+          new_conection_to_me(&afd, newfd, my_data);
+        }
+        else{
+          fprintf(stderr, "Sorry budy I ain't open for busyness...\n", );
+        }
         close(newfd);
       }
     }
@@ -130,10 +137,12 @@ int main(int argc, char *argv[]){
       if(strcmp(token, "new") == 0 && block == 0){
         if(sscanf(buffer, "%*s %d%c", &my_data.key, &eol) == 2 && eol == '\n'){
           my_data.succ_key = my_data.key;
-          strcpy(my_data.succ_ip, argv[1]);
-          strcpy(my_data.succ_gate, argv[2]);
-          strcpy(my_data.s_succ_ip, argv[1]);
-          strcpy(my_data.s_succ_gate, argv[2]);
+          strcpy(my_data.succ_ip, my_data.ip);
+          strcpy(my_data.succ_gate, my_data.gate);
+          strcpy(my_data.s_succ_ip, my_data.ip);
+          strcpy(my_data.s_succ_gate, my_data.gate);
+          tcp_client = init_tcp_cl(my_data.succ_ip, my_data.succ_gate);
+          state_cl = 1;
           block = 1;
           printf("Key : %d\n", my_data.key);
           printf("-> Ring created.\n");
@@ -157,19 +166,24 @@ int main(int argc, char *argv[]){
       /*SENTRY: adding a server specifying it's successor */
       else if(strcmp(token, "sentry") == 0 && block == 0){
         if(sscanf(buffer, "%*s %d %d %s %s%c", &my_data.key, &my_data.succ_key, my_data.succ_ip, my_data.succ_gate, &eol) == 5 && eol == '\n'){
-          tcp_client = init_tcp_cl(my_data.succ_ip, my_data.succ_gate);
-          state_cl = 1;
+          if(my_data.key >= my_data.succ_key){
+            tcp_client = init_tcp_cl(my_data.succ_ip, my_data.succ_gate);
+            state_cl = 1;
 
-          strcpy(msg, "SUCCCONF\n");
-          tcp_client.n = write(tcp_client.fd, msg, MAX);
-          if(tcp_client.n == -1) /*error*/ exit(1);
+            sprintf(msg, "NEW %d %s %s\n", &my_data.key, my_data.ip, my_data.gate);
+            tcp_client.n = write(tcp_client.fd, msg, MAX);
+            if(tcp_client.n == -1) /*error*/ exit(1);
 
-          printf("Key : %d\n", my_data.key);
-          printf("Next server key: %d\n", my_data.succ_key);
-          printf("Next server ip: %s\n", my_data.succ_ip);
-          printf("Next server gate: %s\n", my_data.succ_gate);
-          block = 1;
-          printf("-> Server sentered.\n");
+            printf("Key : %d\n", my_data.key);
+            printf("Next server key: %d\n", my_data.succ_key);
+            printf("Next server ip: %s\n", my_data.succ_ip);
+            printf("Next server gate: %s\n", my_data.succ_gate);
+            block = 1;
+            printf("-> Server sentered.\n");
+          }
+          else{
+            fprintf(stderr, "Não posso ter um sucessor com uma chave maior ou igual a minha.");
+          }
         }
         else{
           printf("-> The command \\sentry is of type \"sentry i succ.ip succ.gate\". Where i is a key.\n");
@@ -192,7 +206,7 @@ int main(int argc, char *argv[]){
       /* FALTA ADICIONAR O ESTADO DO SERVIDOR!!! */
       else if(strcmp(buffer, "show\n") == 0 && block == 1){
           printf("-> Key: %d\n-> IP: %s\n-> PORT: %s\n-> SuccKey: %d\n-> SuccIP: %s\n"
-                    "-> SuccPORT: %s\n", my_data.key, argv[1], argv[2], my_data.succ_key,
+                    "-> SuccPORT: %s\n", my_data.key, my_data.ip, my_data.gate, my_data.succ_key,
                       my_data.succ_ip, my_data.succ_gate);
       }
 
@@ -232,6 +246,8 @@ int max(int x, int y)
 
 struct Program_data init_program_data(){
   struct Program_data init_data;
+  init_data.ip = malloc((MAX+1)*sizeof(char));
+  init_data.gate = malloc((MAX+1)*sizeof(char));
   init_data.succ_ip = malloc((MAX+1)*sizeof(char));
   init_data.succ_gate = malloc((MAX+1)*sizeof(char));
   init_data.s_succ_ip = malloc((MAX+1)*sizeof(char));
@@ -240,6 +256,8 @@ struct Program_data init_program_data(){
 }
 
 int free_program_data(struct Program_data free_data){
+  free(free_data.ip);
+  free(free_data.gate);
   free(free_data.succ_ip);
   free(free_data.succ_gate);
   free(free_data.s_succ_ip);

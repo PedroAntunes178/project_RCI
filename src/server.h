@@ -6,6 +6,9 @@
 struct Program_data{
   int key;
   int succ_key;
+  int s_succ_key;
+  char* ip;
+  char* gate;
   char* succ_ip;
   char* succ_gate;
   char* s_succ_ip;
@@ -33,6 +36,7 @@ void close_udp_cl(struct Program_connection);
 
 struct Program_connection init_tcp_sv(char*);
 struct Program_connection init_tcp_cl(char*, char*);
+int new_conection_to_me(int*, int, struct Program_data);
 int take_a_decision(struct Program_connection, int, struct Program_data);
 
 struct Program_data init_program_data();
