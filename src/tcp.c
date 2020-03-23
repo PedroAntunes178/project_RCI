@@ -58,7 +58,7 @@ struct Program_connection init_tcp_cl(char* ip, char* gate){
   return(client);
 }
 
-int new_conection_to_me(int* afd, int newfd, struct Program_data my_data){
+int new_conection_to_me(int afd, int newfd, struct Program_data my_data){
 
   int n;
   char eol = 0;
@@ -86,7 +86,7 @@ int new_conection_to_me(int* afd, int newfd, struct Program_data my_data){
     para que o predecessor estabeleça o servidor entrante como seu sucessor.*/
     if(strcmp(token, "NEW") == 0){
       if(sscanf(buffer, "%*s %d %s %s%c", &copy_key, copy_ip, copy_gate, &eol) == 4 && eol == '\n'){
-        n = write(*afd, buffer, strlen(msg));
+        n = write(afd, buffer, strlen(buffer));
         if (n==-1) /*error*/ exit(1);
 
         if(my_data.key!=my_data.succ_key){
@@ -99,9 +99,6 @@ int new_conection_to_me(int* afd, int newfd, struct Program_data my_data){
           n = write(newfd, msg, strlen(msg));
           if (n==-1) /*error*/ exit(1);
         }
-
-        close(*afd);
-        *afd = newfd;
       }
       else{
         sprintf(msg, "-> The command \\NEW is of type \"NEW i i.IP i.port\\n\".\n");
@@ -168,7 +165,7 @@ int take_a_decision(struct Program_connection received, int used_fd, struct Prog
   /*SUCC: Um servidor informa o seu predecessor que o seu sucessor é succ com endereço
   IP succ.IP e porto succ.port.*/
   else if(strcmp(token, "SUCC") == 0){
-    if(sscanf(received.buffer, "%*s %d %s %s%c", &my_data.s_succ_key, my_data.s_succ_ip, my_data.s_succ_gate, &eol) == 3 && eol == '\n'){
+    if(sscanf(received.buffer, "%*s %d %s %s%c", &my_data.s_succ_key, my_data.s_succ_ip, my_data.s_succ_gate, &eol) == 4 && eol == '\n'){
       printf("Entrou aqui, depois completo...\n");
       return 0;
     }
@@ -185,15 +182,15 @@ int take_a_decision(struct Program_connection received, int used_fd, struct Prog
   para que o predecessor estabeleça o servidor entrante como seu sucessor.*/
   else if(strcmp(token, "NEW") == 0){
     if(sscanf(received.buffer, "%*s %d %s %s%c", &my_data.succ_key, my_data.succ_ip, my_data.succ_gate, &eol) == 4 && eol == '\n'){
+      close(used_fd);
+      received = init_tcp_cl(my_data.succ_ip, my_data.succ_gate);
       sprintf(msg, "SUCCCONF\n");
       received.n = write(used_fd, msg, strlen(msg));
       if (received.n==-1) /*error*/ exit(1);
       return 0;
     }
     else{
-      sprintf(msg, "-> The command \\NEW is of type \"NEW i i.IP i.port\\n\".\n");
-      received.n = write(used_fd, msg, strlen(msg));
-      if (received.n==-1) /*error*/ exit(1);
+      fprintf(stderr, "-> The command \\NEW is of type \"NEW i i.IP i.port\\n\".\n");
       return -1;
     }
   }
