@@ -101,7 +101,7 @@ int main(int argc, char *argv[]){
         if(tcp_server.n == -1) /*error*/ exit(1);
         write(1, "received: ", 10);
         write(1, tcp_server.buffer, tcp_server.n);
-        take_a_decision(tcp_server, afd, my_data);
+        take_a_decision(tcp_server, afd, tcp_client.fd, &my_data);
       }
       else{
         printf("Closed Server connection.\n");
@@ -116,7 +116,7 @@ int main(int argc, char *argv[]){
         if(tcp_client.n == -1) /*error*/ exit(1);//é aqui que está a retornar um erro
         write(1, "echo: ", 6);
         write(1, tcp_client.buffer, tcp_client.n);
-        take_a_decision(tcp_client, tcp_client.fd, my_data);
+        take_a_decision(tcp_client, tcp_client.fd, afd, &my_data);
       }
       else{
         printf("Closed Client connection.\n");

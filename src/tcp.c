@@ -132,7 +132,7 @@ int new_conection_to_me(int afd, int newfd, struct Program_data my_data){
 }
 
 
-int take_a_decision(struct Program_connection received, int used_fd, struct Program_data my_data){
+int take_a_decision(struct Program_connection received, int response_fd, int pass_the_message_fd, struct Program_data* my_data){
 
   int key;
   int succ_key;
@@ -151,8 +151,8 @@ int take_a_decision(struct Program_connection received, int used_fd, struct Prog
   /*SUCCCONF: Um servidor informa outro que este se tornou o seu sucessor. */
   if(strcmp(token, "SUCCCONF") == 0){
     if(sscanf(received.buffer, "%*s%c", &eol) == 1 && eol == '\n'){
-      sprintf(msg, "SUCC %d %s %s\n", my_data.succ_key, my_data.succ_ip, my_data.succ_gate);
-      received.n = write(used_fd, msg, strlen(msg));
+      sprintf(msg, "SUCC %d %s %s\n", my_data->succ_key, my_data->succ_ip, my_data->succ_gate);
+      received.n = write(response_fd, msg, strlen(msg));
       if (received.n==-1) /*error*/ exit(1);
       return 0;
     }
@@ -165,7 +165,7 @@ int take_a_decision(struct Program_connection received, int used_fd, struct Prog
   /*SUCC: Um servidor informa o seu predecessor que o seu sucessor é succ com endereço
   IP succ.IP e porto succ.port.*/
   else if(strcmp(token, "SUCC") == 0){
-    if(sscanf(received.buffer, "%*s %d %s %s%c", &my_data.s_succ_key, my_data.s_succ_ip, my_data.s_succ_gate, &eol) == 4 && eol == '\n'){
+    if(sscanf(received.buffer, "%*s %d %s %s%c", &my_data->s_succ_key, my_data->s_succ_ip, my_data->s_succ_gate, &eol) == 4 && eol == '\n'){
       printf("Entrou aqui, depois completo...\n");
       return 0;
     }
@@ -181,11 +181,17 @@ int take_a_decision(struct Program_connection received, int used_fd, struct Prog
   servidor de chave i, endereço IP i.IP e porto i.port pretende entrar no anel,
   para que o predecessor estabeleça o servidor entrante como seu sucessor.*/
   else if(strcmp(token, "NEW") == 0){
-    if(sscanf(received.buffer, "%*s %d %s %s%c", &my_data.succ_key, my_data.succ_ip, my_data.succ_gate, &eol) == 4 && eol == '\n'){
-      close(used_fd);
-      received = init_tcp_cl(my_data.succ_ip, my_data.succ_gate);
+    if(sscanf(received.buffer, "%*s %d %s %s%c", &my_data->succ_key, my_data->succ_ip, my_data->succ_gate, &eol) == 4 && eol == '\n'){
+      freeaddrinfo(received.res);
+      close(response_fd);
+      received = init_tcp_cl(my_data->succ_ip, my_data->succ_gate);
+      
       sprintf(msg, "SUCCCONF\n");
-      received.n = write(used_fd, msg, strlen(msg));
+      received.n = write(response_fd, msg, strlen(msg));
+      if (received.n==-1) /*error*/ exit(1);
+
+      sprintf(msg, "SUCC %d %s %s\n", my_data->succ_key, my_data->succ_ip, my_data->succ_gate);
+      received.n = write(pass_the_message_fd, msg, strlen(msg));
       if (received.n==-1) /*error*/ exit(1);
       return 0;
     }
