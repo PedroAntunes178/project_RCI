@@ -88,7 +88,7 @@ int main(int argc, char *argv[]){
           new_conection_to_me(&afd, newfd, my_data);
         }
         else{
-          fprintf(stderr, "Sorry budy I ain't open for busyness...\n", );
+          fprintf(stderr, "Sorry budy I ain't open for busyness...\n");
         }
         close(newfd);
       }
@@ -166,11 +166,11 @@ int main(int argc, char *argv[]){
       /*SENTRY: adding a server specifying it's successor */
       else if(strcmp(token, "sentry") == 0 && block == 0){
         if(sscanf(buffer, "%*s %d %d %s %s%c", &my_data.key, &my_data.succ_key, my_data.succ_ip, my_data.succ_gate, &eol) == 5 && eol == '\n'){
-          if(my_data.key >= my_data.succ_key){
+          if(my_data.key <= my_data.succ_key){
             tcp_client = init_tcp_cl(my_data.succ_ip, my_data.succ_gate);
             state_cl = 1;
 
-            sprintf(msg, "NEW %d %s %s\n", &my_data.key, my_data.ip, my_data.gate);
+            sprintf(msg, "NEW %d %s %s\n", my_data.key, my_data.ip, my_data.gate);
             tcp_client.n = write(tcp_client.fd, msg, MAX);
             if(tcp_client.n == -1) /*error*/ exit(1);
 

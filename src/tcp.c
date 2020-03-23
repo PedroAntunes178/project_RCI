@@ -71,9 +71,9 @@ int new_conection_to_me(int* afd, int newfd, struct Program_data my_data){
 
   int copy_key;
   char* copy_ip;
-  succ_ip = malloc((MAX+1)*sizeof(char));
+  copy_ip = malloc((MAX+1)*sizeof(char));
   char* copy_gate;
-  succ_gate = malloc((MAX+1)*sizeof(char));
+  copy_gate = malloc((MAX+1)*sizeof(char));
 
   if((n = read(newfd, buffer, 128)) != 0){
     if(n == -1) /*error*/ exit(1);
@@ -168,7 +168,7 @@ int take_a_decision(struct Program_connection received, int used_fd, struct Prog
   /*SUCC: Um servidor informa o seu predecessor que o seu sucessor é succ com endereço
   IP succ.IP e porto succ.port.*/
   else if(strcmp(token, "SUCC") == 0){
-    if(sscanf(received.buffer, "%*s %d %s %s%c", my_data.s_succ_key, my_data.s_succ_ip, my_data.s_succ_gate, &eol) == 3 && eol == '\n'){
+    if(sscanf(received.buffer, "%*s %d %s %s%c", &my_data.s_succ_key, my_data.s_succ_ip, my_data.s_succ_gate, &eol) == 3 && eol == '\n'){
       printf("Entrou aqui, depois completo...\n");
       return 0;
     }
@@ -192,8 +192,8 @@ int take_a_decision(struct Program_connection received, int used_fd, struct Prog
     }
     else{
       sprintf(msg, "-> The command \\NEW is of type \"NEW i i.IP i.port\\n\".\n");
-      n = write(newfd, msg, strlen(msg));
-      if (n==-1) /*error*/ exit(1);
+      received.n = write(used_fd, msg, strlen(msg));
+      if (received.n==-1) /*error*/ exit(1);
       return -1;
     }
   }
