@@ -118,6 +118,20 @@ int main(int argc, char *argv[]){
         write(1, tcp_client.buffer, tcp_client.n);
         take_a_decision(tcp_client, tcp_client.fd, afd, &my_data);
       }
+      else if(block){
+        freeaddrinfo(tcp_client.res);
+        close(tcp_client.fd);
+        my_data.succ_ip = my_data.s_succ_ip;
+        my_data.succ_gate = my_data.s_succ_gate;
+        my_data.succ_key = my_data.s_succ_key;
+        tcp_client = init_tcp_cl(my_data.succ_ip, my_data.succ_gate);
+        sprintf(msg, "SUCCCONF\n");
+        tcp_client.n = write(tcp_client.fd, msg, MAX);
+        if(tcp_client.n == -1) /*error*/ exit(1);
+        sprintf(msg, "SUCC %d %s %s\n", my_data.succ_key, my_data.succ_ip, my_data.succ_gate);
+        tcp_server.n = write(afd, msg, MAX);
+        if(tcp_server.n == -1) /*error*/ exit(1);
+      }
       else{
         printf("Closed Client connection.\n");
         freeaddrinfo(tcp_client.res);
@@ -166,7 +180,7 @@ int main(int argc, char *argv[]){
       /*SENTRY: adding a server specifying it's successor */
       else if(strcmp(token, "sentry") == 0 && block == 0){
         if(sscanf(buffer, "%*s %d %d %s %s%c", &my_data.key, &my_data.succ_key, my_data.succ_ip, my_data.succ_gate, &eol) == 5 && eol == '\n'){
-          if(my_data.key <= my_data.succ_key){
+          if(my_data.key != my_data.succ_key){
             tcp_client = init_tcp_cl(my_data.succ_ip, my_data.succ_gate);
             state_cl = 1;
 
@@ -182,7 +196,7 @@ int main(int argc, char *argv[]){
             printf("-> Server sentered.\n");
           }
           else{
-            printf("Não posso ter um sucessor com uma chave maior ou igual a minha.");
+            printf("Não posso ter um sucessor com uma chave igual a minha.");
           }
         }
         else{
@@ -224,6 +238,8 @@ int main(int argc, char *argv[]){
     }
   }
 
+  freeaddrinfo(tcp_client.res);
+  close(tcp_client.fd);
   freeaddrinfo(tcp_server.res);
   close(tcp_server.fd);
   freeaddrinfo(udp_server.res);

@@ -185,7 +185,7 @@ int take_a_decision(struct Program_connection received, int response_fd, int pas
       freeaddrinfo(received.res);
       close(response_fd);
       received = init_tcp_cl(my_data->succ_ip, my_data->succ_gate);
-      
+
       sprintf(msg, "SUCCCONF\n");
       received.n = write(response_fd, msg, strlen(msg));
       if (received.n==-1) /*error*/ exit(1);
@@ -214,12 +214,14 @@ int take_a_decision(struct Program_connection received, int response_fd, int pas
   /*KEY: Um servidor informa o servidor que iniciou a pesquisa da chave k que esta chave
   se encontra armazenada no seu sucessor succ com endereço IP succ.IP e porto
   succ.port. Esta mensagem é enviada sobre uma sessão TCP criada para o
-  4efeito, do servidor que pretende enviar a mensagem para o servidor que iniciou a
+  efeito, do servidor que pretende enviar a mensagem para o servidor que iniciou a
   pesquisa.*/
    else if(strcmp(token, "KEY") == 0){
      if(sscanf(received.buffer, "%*s %d%c", &key, &eol) == 2 && eol == '\n'){
      }
      else{
+       fprintf(stderr, "-> The command \\KEY is of type \"KEY k succ succ.IP succ.port\\n\".\n");
+       return -1;
      }
    }
 
