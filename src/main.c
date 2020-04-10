@@ -242,8 +242,6 @@ int main(int argc, char *argv[]){
   close(tcp_client.fd);
   freeaddrinfo(tcp_server.res);
   close(tcp_server.fd);
-  freeaddrinfo(udp_server.res);
-  close(udp_server.fd);
   free(buffer);
   free(token);
   free_program_data(my_data);
