@@ -108,6 +108,23 @@ int new_conection_to_me(int afd, int newfd, struct Program_data my_data){
         return -1;
       }
     }
+    /*KEY: Um servidor informa o servidor que iniciou a pesquisa da chave k que esta chave
+    se encontra armazenada no seu sucessor succ com endereço IP succ.IP e porto
+    succ.port. Esta mensagem é enviada sobre uma sessão TCP criada para o
+    efeito, do servidor que pretende enviar a mensagem para o servidor que iniciou a
+    pesquisa.*/
+    else if(strcmp(token, "KEY") == 0){
+      int key = 0;
+      if(sscanf(received.buffer, "%*s %d %d %s %s%c", &key, &copy_key, copy_ip, copy_gate, &eol) == 5 && eol == '\n'){
+        fprintf(stderr, "-> A chave pedida no FIND %d, encontra-se no servidor %d, %s:%s\n", key, og_key, og_ip, og_gate);
+        fprintf(stderr, "%d\n", key);
+        return 0;
+      }
+      else{
+        fprintf(stderr, "-> The command \\KEY is of type \"KEY k succ succ.IP succ.port\\n\".\n");
+        return -1;
+      }
+    }
     else{
       sprintf(msg, "Sorry I'm already busy with a Ring.\n");
       n = write(newfd, msg, strlen(msg));
@@ -247,22 +264,6 @@ int take_a_decision(struct Program_connection received, int response_fd, int pas
       return -1;
     }
   }
-
-  /*KEY: Um servidor informa o servidor que iniciou a pesquisa da chave k que esta chave
-  se encontra armazenada no seu sucessor succ com endereço IP succ.IP e porto
-  succ.port. Esta mensagem é enviada sobre uma sessão TCP criada para o
-  efeito, do servidor que pretende enviar a mensagem para o servidor que iniciou a
-  pesquisa.*/
-   else if(strcmp(token, "KEY") == 0){
-     if(sscanf(received.buffer, "%*s %d %d %s %s%c", &key, &og_key, og_ip, og_gate, &eol) == 5 && eol == '\n'){
-       fprintf(stderr, "-> A chave pedida no FIND %d, encontra-se no servidor %d, %s:%s\n", key, og_key, og_ip, og_gate);
-       return 0;
-     }
-     else{
-       fprintf(stderr, "-> The command \\KEY is of type \"KEY k succ succ.IP succ.port\\n\".\n");
-       return -1;
-     }
-   }
 
   /*Invalid command, ignores it*/
   else{
