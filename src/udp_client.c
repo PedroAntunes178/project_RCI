@@ -9,9 +9,9 @@
 
 #include "server.h"
 
-struct Client init_udp_cl(char* ip, char* gate){
+struct Program_connection init_udp_cl(char* ip, char* gate){
 
-  struct Client client;
+  struct Program_connection client;
 
   client.fd = socket(AF_INET, SOCK_DGRAM, 0);
   if (client.fd == -1) /**error*/ exit(1);
@@ -25,7 +25,7 @@ struct Client init_udp_cl(char* ip, char* gate){
 
   }
 
-struct Client request_udp_cl(struct Client client, char* msg){
+struct Program_connection request_udp_cl(struct Program_connection client, char* msg){
 
   client.n = sendto(client.fd, msg, sizeof(msg), 0, client.res->ai_addr, client.res->ai_addrlen);
   if (client.n==-1) /*error*/ exit(1);
@@ -39,7 +39,7 @@ struct Client request_udp_cl(struct Client client, char* msg){
 
 }
 
-void close_udp_cl(struct Client client){
+void close_udp_cl(struct Program_connection client){
 
   freeaddrinfo(client.res);
   close(client.fd);

@@ -9,9 +9,9 @@
 
 #include "server.h"
 
-struct Server init_udp_sv(char* gate){
+struct Program_connection init_udp_sv(char* gate){
 
-  struct Server server;
+  struct Program_connection server;
 
   server.fd = socket(AF_INET, SOCK_DGRAM, 0);
   if (server.fd == -1) /**error*/ exit(1);
@@ -30,7 +30,7 @@ struct Server init_udp_sv(char* gate){
   return server;
 }
 
-struct Server listen_udp_sv(struct Server server){
+struct Program_connection listen_udp_sv(struct Program_connection server){
 
   server.addrlen = sizeof(server.addr);
 
@@ -45,7 +45,7 @@ struct Server listen_udp_sv(struct Server server){
   return server;
 }
 
-void close_udp_sv(struct Server server){
+void close_udp_sv(struct Program_connection server){
   freeaddrinfo(server.res);
   close(server.fd);
 }
