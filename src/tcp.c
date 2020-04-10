@@ -118,6 +118,9 @@ int new_conection_to_me(int afd, int newfd, struct Program_data my_data){
       if(sscanf(received.buffer, "%*s %d %d %s %s%c", &key, &copy_key, copy_ip, copy_gate, &eol) == 5 && eol == '\n'){
         fprintf(stderr, "-> A chave pedida no FIND %d, encontra-se no servidor %d, %s:%s\n", key, og_key, og_ip, og_gate);
         fprintf(stderr, "%d\n", key);
+        fprintf(stderr, "%d\n", copy_key);
+        fprintf(stderr, "%s\n", copy_ip);
+        fprintf(stderr, "%s\n", copy_gate);
         return 0;
       }
       else{
