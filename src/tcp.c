@@ -115,6 +115,9 @@ int new_conection_to_me(int afd, int newfd, struct Program_data my_data){
     pesquisa.*/
     else if(strcmp(token, "KEY") == 0){
       int key = 0;
+      int i =0;
+      i = sscanf(msg, "%*s %d %d %s %s%c", &key, &copy_key, copy_ip, copy_gate, &eol) == 5;
+      fprintf(stderr, "%d\n", i);
       if(sscanf(msg, "%*s %d %d %s %s%c", &key, &copy_key, copy_ip, copy_gate, &eol) == 5 && eol == '\n'){
         fprintf(stderr, "%d\n", key);
         fprintf(stderr, "%d\n", copy_key);

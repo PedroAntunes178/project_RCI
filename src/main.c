@@ -46,10 +46,10 @@ int main(int argc, char *argv[]){
   char* msg;
   msg = (char*)malloc((MAX+1)*sizeof(char));
   char eol = 0;
-  int block = 0;
+  int inside_a_ring = 0;
   int exit_flag = 0;
 
-  while(!(exit_flag)){
+  while(1)){
     FD_ZERO(&rfds);
     FD_SET(0, &rfds);
     FD_SET(udp_server.fd, &rfds);
@@ -86,7 +86,7 @@ int main(int argc, char *argv[]){
         printf("newfd : %d\n", newfd);
         state_sv = 1;
       }
-      else if(block){
+      else if(inside_a_ring){
         new_conection_to_me(afd, newfd, my_data);
         fprintf(stderr, "It passed\n");
         afd = newfd;
@@ -121,7 +121,7 @@ int main(int argc, char *argv[]){
         write(1, tcp_client.buffer, tcp_client.n);
         take_a_decision(tcp_client, tcp_client.fd, afd, &my_data);
       }
-      else if(block){
+      else if(inside_a_ring){
         freeaddrinfo(tcp_client.res);
         close(tcp_client.fd);
         my_data.succ_ip = my_data.s_succ_ip;
@@ -152,7 +152,7 @@ int main(int argc, char *argv[]){
       sscanf(buffer, "%s", token);
 
       /*NEW: creating the first server*/
-      if(strcmp(token, "new") == 0 && block == 0){
+      if(strcmp(token, "new") == 0 && inside_a_ring == 0){
         if(sscanf(buffer, "%*s %d%c", &my_data.key, &eol) == 2 && eol == '\n'){
           my_data.succ_key = my_data.key;
           strcpy(my_data.succ_ip, my_data.ip);
@@ -161,7 +161,7 @@ int main(int argc, char *argv[]){
           strcpy(my_data.s_succ_gate, my_data.gate);
           tcp_client = init_tcp_cl(my_data.succ_ip, my_data.succ_gate);
           state_cl = 1;
-          block = 1;
+          inside_a_ring = 1;
           printf("Key : %d\n", my_data.key);
           printf("-> Ring created.\n");
         }
@@ -173,35 +173,18 @@ int main(int argc, char *argv[]){
       }
 
       /*ENTRY: ... */
-      else if(strcmp(token, "entry") == 0 && block == 0){
+      else if(strcmp(token, "entry") == 0 && inside_a_ring == 0){
 
         /* do stuff */
 
-        block = 1;
+        inside_a_ring = 1;
         printf("-> Server entered.\n");
       }
 
       /*SENTRY: adding a server specifying it's successor */
-      else if(strcmp(token, "sentry") == 0 && block == 0){
+      else if(strcmp(token, "sentry") == 0 && !(inside_a_ring)){
         if(sscanf(buffer, "%*s %d %d %s %s%c", &my_data.key, &my_data.succ_key, my_data.succ_ip, my_data.succ_gate, &eol) == 5 && eol == '\n'){
-          if(my_data.key != my_data.succ_key){
-            tcp_client = init_tcp_cl(my_data.succ_ip, my_data.succ_gate);
-            state_cl = 1;
-
-            sprintf(msg, "NEW %d %s %s\n", my_data.key, my_data.ip, my_data.gate);
-            tcp_client.n = write(tcp_client.fd, msg, MAX);
-            if(tcp_client.n == -1) /*error*/ exit(1);
-
-            printf("Key : %d\n", my_data.key);
-            printf("Next server key: %d\n", my_data.succ_key);
-            printf("Next server ip: %s\n", my_data.succ_ip);
-            printf("Next server gate: %s\n", my_data.succ_gate);
-            block = 1;
-            printf("-> Server sentered.\n");
-          }
-          else{
-            printf("Não posso ter um sucessor com uma chave igual a minha.");
-          }
+          inside_a_ring = !(sentry(my_data, tcp_client, msg, &state_cl))
         }
         else{
           printf("-> The command \\sentry is of type \"sentry i succ.ip succ.gate\". Where i is a key.\n");
@@ -211,63 +194,51 @@ int main(int argc, char *argv[]){
       }
 
       /*LEAVE: ... */
-      else if(strcmp(buffer, "leave\n") == 0 && block == 1){
-        if(state_cl){
-          freeaddrinfo(tcp_client.res);
-          close(tcp_client.fd);
-          state_cl = 0;
-        }
-
-        block = 0;
-        printf("-> Left the ring.\n");
+      else if(strcmp(buffer, "leave\n") == 0 && inside_a_ring){
+        leave(tcp_client, afd, &state_sv, &state_cl);
+        inside_a_ring = 0;
       }
 
       /* FALTA ADICIONAR O ESTADO DO SERVIDOR!!! */
-      else if(strcmp(buffer, "show\n") == 0 && block == 1){
-          printf("-> Key: %d\n-> IP: %s\n-> PORT: %s\n-> SuccKey: %d\n-> SuccIP: %s\n-> SuccPORT: %s\n-> S_SuccKey: %d\n-> S_SuccIP: %s\n-> S_SuccPORT: %s\n", my_data.key, my_data.ip, my_data.gate, my_data.succ_key, my_data.succ_ip, my_data.succ_gate, my_data.s_succ_key, my_data.s_succ_ip, my_data.s_succ_gate);
+      else if(strcmp(buffer, "show\n") == 0){
+        if(inside_a_ring)
+          fprintf(stderr, "-> Key: %d\n-> IP: %s\n-> PORT: %s\n-> SuccKey: %d\n-> SuccIP: %s\n-> SuccPORT: %s\n-> S_SuccKey: %d\n-> S_SuccIP: %s\n-> S_SuccPORT: %s\n", my_data.key, my_data.ip, my_data.gate, my_data.succ_key, my_data.succ_ip, my_data.succ_gate, my_data.s_succ_key, my_data.s_succ_ip, my_data.s_succ_gate);
+        else fprintf(stderr, "Not inside a ring, so I don't have a successor :( )\n");
       }
 
       /*FIND: ... */
       else if(strcmp(token, "find") == 0){
           if(sscanf(buffer, "%*s %d%c", &key, &eol) == 2 && eol == '\n'){
-
             sprintf(msg, "FND %d %d %s %s\n", key, my_data.key, my_data.ip, my_data.gate);
             tcp_client.n = write(tcp_client.fd, msg, MAX);
             if(tcp_client.n == -1) /*error*/ exit(1);
-
+          }
+          else{
+            printf("-> The command \\find is of type \"find i\". Where i is a key.\n");
+            memset(buffer, 0, MAX);
+            memset(token, 0, MAX);
           }
       }
       /*EXIT: exits the application successfully*/
       else if(strcmp(buffer, "exit\n") == 0){
-          printf("\nExiting the application...\n");
-          exit_flag = 1;
+        leave(tcp_client, afd, &state_sv, &state_cl);
+        free(buffer);
+        free(token);
+        free_program_data(my_data);
+        fprintf(stderr, "\nExiting the application...\n");
+        exit(EXIT_SUCCESS);
       }
       /*Invalid command, ignores it*/
-      else{
-        printf("-> Invalid command.\n");
-      }
+      else printf("-> Invalid command.\n");
     }
   }
-  if(state_cl){
-    freeaddrinfo(tcp_client.res);
-    close(tcp_client.fd);
-  }
-  if(state_sv){
-    freeaddrinfo(tcp_server.res);
-    close(tcp_server.fd);
-  }
-  free(buffer);
-  free(token);
-  free_program_data(my_data);
-  exit(EXIT_SUCCESS);
 }
 
-int max(int x, int y)
-{
-    if (x > y)
-        return x;
-    else
-        return y;
+int max(int x, int y){
+  if (x > y)
+    return x;
+  else
+    return y;
 }
 
 struct Program_data init_program_data(){
@@ -290,3 +261,35 @@ int free_program_data(struct Program_data free_data){
   free(free_data.s_succ_gate);
   return 0;
 }
+
+int leave(struct Program_connection tcp_client, int afd, int* state_sv, int* state_cl){
+  freeaddrinfo(tcp_client.res);
+  close(tcp_client.fd);
+  *state_cl = 0;
+  close(afd);
+  *state_sv = 0;
+  fprintf(stderr, "Leaving the ring...\n", );
+  return 0;
+}
+
+int sentry(struct Program_data my_data, struct Program_connection tcp_client, char* msg, int* state_cl){
+   if(my_data.key != my_data.succ_key){
+     tcp_client = init_tcp_cl(my_data.succ_ip, my_data.succ_gate);
+     state_cl = 1;
+
+     sprintf(msg, "NEW %d %s %s\n", my_data.key, my_data.ip, my_data.gate);
+     tcp_client.n = write(tcp_client.fd, msg, MAX);
+     if(tcp_client.n == -1) /*error*/ exit(1);
+
+     printf("Key : %d\n", my_data.key);
+     printf("Next server key: %d\n", my_data.succ_key);
+     printf("Next server ip: %s\n", my_data.succ_ip);
+     printf("Next server gate: %s\n", my_data.succ_gate);
+     printf("-> Server sentered.\n");
+     return 0;
+   }
+   else{
+     printf("Não posso ter um sucessor com uma chave igual a minha.");
+     return 1;
+   }
+ }
