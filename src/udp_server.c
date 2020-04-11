@@ -44,8 +44,3 @@ struct Program_connection listen_udp_sv(struct Program_connection server){
 
   return server;
 }
-
-void close_udp_sv(struct Program_connection server){
-  freeaddrinfo(server.res);
-  close(server.fd);
-}

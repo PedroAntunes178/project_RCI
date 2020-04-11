@@ -38,10 +38,3 @@ struct Program_connection request_udp_cl(struct Program_connection client, char*
   write(1, client.buffer, client.n);
 
 }
-
-void close_udp_cl(struct Program_connection client){
-
-  freeaddrinfo(client.res);
-  close(client.fd);
-
-}

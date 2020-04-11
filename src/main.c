@@ -72,7 +72,7 @@ int main(int argc, char *argv[]){
       exit(1);
 
     if(FD_ISSET(udp_server.fd, &rfds)){
-      udp_server = listen_udp_sv(udp_server);
+      //udp_server = listen_udp_sv(udp_server);
     }
 
     /* WAITING FOR CONNECTING AS TCP SERVER*/
@@ -128,6 +128,7 @@ int main(int argc, char *argv[]){
         my_data.succ_gate = my_data.s_succ_gate;
         my_data.succ_key = my_data.s_succ_key;
         tcp_client = init_tcp_cl(my_data.succ_ip, my_data.succ_gate);
+        fprintf(stderr, "tá aqui\n");
         sprintf(msg, "SUCCCONF\n");
         tcp_client.n = write(tcp_client.fd, msg, MAX);
         if(tcp_client.n == -1) /*error*/ exit(1);
@@ -216,6 +217,7 @@ int main(int argc, char *argv[]){
           close(tcp_client.fd);
           state_cl = 0;
         }
+
         block = 0;
         printf("-> Left the ring.\n");
       }
@@ -246,13 +248,14 @@ int main(int argc, char *argv[]){
       }
     }
   }
-
-  freeaddrinfo(tcp_client.res);
-  close(tcp_client.fd);
-  freeaddrinfo(tcp_server.res);
-  close(tcp_server.fd);
-  freeaddrinfo(udp_server.res);
-  close(udp_server.fd);
+  if(state_cl){
+    freeaddrinfo(tcp_client.res);
+    close(tcp_client.fd);
+  }
+  if(state_sv){
+    freeaddrinfo(tcp_server.res);
+    close(tcp_server.fd);
+  }
   free(buffer);
   free(token);
   free_program_data(my_data);
