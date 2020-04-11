@@ -42,5 +42,6 @@ int take_a_decision(struct Program_connection, int, int, struct Program_data*);
 struct Program_data init_program_data();
 int free_program_data(struct Program_data);
 int leave(struct Program_connection, int, int*, int*);
+int sentry(struct Program_data*, struct Program_connection, char*, int*);
 
 #endif

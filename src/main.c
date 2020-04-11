@@ -49,7 +49,7 @@ int main(int argc, char *argv[]){
   int inside_a_ring = 0;
   int exit_flag = 0;
 
-  while(1)){
+  while(1){
     FD_ZERO(&rfds);
     FD_SET(0, &rfds);
     FD_SET(udp_server.fd, &rfds);
@@ -177,14 +177,14 @@ int main(int argc, char *argv[]){
 
         /* do stuff */
 
-        inside_a_ring = 1;
+        inside_a_ring = !(sentry(&my_data, tcp_client, msg, &state_cl));
         printf("-> Server entered.\n");
       }
 
       /*SENTRY: adding a server specifying it's successor */
       else if(strcmp(token, "sentry") == 0 && !(inside_a_ring)){
         if(sscanf(buffer, "%*s %d %d %s %s%c", &my_data.key, &my_data.succ_key, my_data.succ_ip, my_data.succ_gate, &eol) == 5 && eol == '\n'){
-          inside_a_ring = !(sentry(my_data, tcp_client, msg, &state_cl))
+          inside_a_ring = !(sentry(&my_data, tcp_client, msg, &state_cl));
         }
         else{
           printf("-> The command \\sentry is of type \"sentry i succ.ip succ.gate\". Where i is a key.\n");
@@ -268,23 +268,23 @@ int leave(struct Program_connection tcp_client, int afd, int* state_sv, int* sta
   *state_cl = 0;
   close(afd);
   *state_sv = 0;
-  fprintf(stderr, "Leaving the ring...\n", );
+  fprintf(stderr, "Leaving the ring...\n");
   return 0;
 }
 
-int sentry(struct Program_data my_data, struct Program_connection tcp_client, char* msg, int* state_cl){
-   if(my_data.key != my_data.succ_key){
-     tcp_client = init_tcp_cl(my_data.succ_ip, my_data.succ_gate);
-     state_cl = 1;
+int sentry(struct Program_data* my_data, struct Program_connection tcp_client, char* msg, int* state_cl){
+   if(my_data->key != my_data->succ_key){
+     tcp_client = init_tcp_cl(my_data->succ_ip, my_data->succ_gate);
+     *state_cl = 1;
 
-     sprintf(msg, "NEW %d %s %s\n", my_data.key, my_data.ip, my_data.gate);
+     sprintf(msg, "NEW %d %s %s\n", my_data->key, my_data->ip, my_data->gate);
      tcp_client.n = write(tcp_client.fd, msg, MAX);
      if(tcp_client.n == -1) /*error*/ exit(1);
 
-     printf("Key : %d\n", my_data.key);
-     printf("Next server key: %d\n", my_data.succ_key);
-     printf("Next server ip: %s\n", my_data.succ_ip);
-     printf("Next server gate: %s\n", my_data.succ_gate);
+     printf("Key : %d\n", my_data->key);
+     printf("Next server key: %d\n", my_data->succ_key);
+     printf("Next server ip: %s\n", my_data->succ_ip);
+     printf("Next server gate: %s\n", my_data->succ_gate);
      printf("-> Server sentered.\n");
      return 0;
    }
