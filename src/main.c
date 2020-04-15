@@ -1,15 +1,14 @@
+#include <arpa/inet.h>
+#include <unistd.h>
+#include <netinet/in.h>
+#include <netdb.h>
 #include <sys/time.h>
 #include <sys/types.h>
-#include <unistd.h>
-#include <unistd.h>
-#include <stdlib.h>
-#include <sys/types.h>
 #include <sys/socket.h>
-#include <netinet/in.h>
-#include <arpa/inet.h>
-#include <netdb.h>
-#include <string.h>
 #include <stdio.h>
+#include <stdlib.h>
+#include <string.h>
+#include <features.h>
 
 #include "server.h"
 
@@ -45,11 +44,8 @@ int main(int argc, char *argv[]){
   token = (char*)malloc((MAX+1)*sizeof(char));
   char* msg;
   msg = (char*)malloc((MAX+1)*sizeof(char));
-  char* received_message_buffer;
-  received_message_buffer = (char*)malloc((MAX+1)*sizeof(char));
   char eol = 0;
   int inside_a_ring = 0;
-  int exit_flag = 0;
 
   while(1){
     FD_ZERO(&rfds);
@@ -61,17 +57,17 @@ int main(int argc, char *argv[]){
     A sequência de ifs que se seguem servem para não inicializar os file descriptors sem eles serem necessários.
     */
     if(my_data.state_new_conection){
-      //printf("fd_set new_sv\n");
+      printf("fd_set new_conection\n");
       FD_SET(new_conection_fd, &rfds);
       maxfd = max(maxfd, new_conection_fd) + 1;
     }
     if(my_data.state_sv){
-      //printf("fd_set sv\n");
+      printf("fd_set sv\n");
       FD_SET(afd, &rfds);
       maxfd = max(maxfd, afd) + 1;
     }
     if(my_data.state_cl){
-      //printf("fd_set cl\n");
+      printf("fd_set cl\n");
       FD_SET(tcp_client.fd, &rfds);
       maxfd = max(maxfd, tcp_client.fd) + 1;
     }
@@ -219,8 +215,8 @@ int main(int argc, char *argv[]){
       /* FALTA ADICIONAR O ESTADO DO SERVIDOR!!! */
       else if(strcmp(buffer, "show\n") == 0){
         if(inside_a_ring)
-          fprintf(stderr, "ERROR -> Key: %d\n-> IP: %s\n-> PORT: %s\n-> SuccKey: %d\n-> SuccIP: %s\n-> SuccPORT: %s\n-> S_SuccKey: %d\n-> S_SuccIP: %s\n-> S_SuccPORT: %s\n", my_data.key, my_data.ip, my_data.gate, my_data.succ_key, my_data.succ_ip, my_data.succ_gate, my_data.s_succ_key, my_data.s_succ_ip, my_data.s_succ_gate);
-        else fprintf(stderr, "Not inside a ring, so I don't have a successor :( )\n");
+          fprintf(stdout, "Key: %d\n-> IP: %s\n-> PORT: %s\n-> SuccKey: %d\n-> SuccIP: %s\n-> SuccPORT: %s\n-> S_SuccKey: %d\n-> S_SuccIP: %s\n-> S_SuccPORT: %s\n", my_data.key, my_data.ip, my_data.gate, my_data.succ_key, my_data.succ_ip, my_data.succ_gate, my_data.s_succ_key, my_data.s_succ_ip, my_data.s_succ_gate);
+        else fprintf(stdout, "Not inside a ring, so I don't have a successor.\n");
       }
 
       /*FIND: ... */
@@ -236,9 +232,10 @@ int main(int argc, char *argv[]){
             memset(token, 0, MAX);
           }
       }
+
       /*EXIT: exits the application successfully*/
       else if(strcmp(buffer, "exit\n") == 0){
-        leave(tcp_client, afd, &my_data);
+        if(inside_a_ring) leave(tcp_client, afd, &my_data);
         free_program_data(my_data);
         free(buffer);
         free(token);

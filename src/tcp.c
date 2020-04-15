@@ -79,7 +79,7 @@ int new_conection_to_me(int* afd, int newfd, struct Program_data my_data){
   if((n = read(newfd, buffer, 128)) != 0){
     strcpy(my_data.buffer, buffer);//vamos ter de arranjar forma para confirmar que a msg que queremos ler está toda no buffer
     if(n == -1) /*error*/ exit(1);
-    sscanf(my_data.buffer, "%s", token);
+    sscanf(buffer, "%s", token);
 
     /*NEW: Esta mensagem é usada em dois contextos diferentes. (1)(este caso) Um servidor entrante
     informa o seu futuro sucessor que pretende entrar no anel com chave i, endereço
@@ -87,7 +87,7 @@ int new_conection_to_me(int* afd, int newfd, struct Program_data my_data){
     servidor de chave i, endereço IP i.IP e porto i.port pretende entrar no anel,
     para que o predecessor estabeleça o servidor entrante como seu sucessor.*/
     if(strcmp(token, "NEW") == 0){
-      if(sscanf(my_data.buffer, "%*s %d %s %s%c", &copy_key, copy_ip, copy_gate, &eol) == 4 && eol == '\n'){
+      if(sscanf(buffer, "%*s %d %s %s%c", &copy_key, copy_ip, copy_gate, &eol) == 4 && eol == '\n'){
         n = write(*afd, my_data.buffer, strlen(my_data.buffer));
         if (n==-1) /*error*/ exit(1);
 
@@ -131,12 +131,12 @@ int new_conection_to_me(int* afd, int newfd, struct Program_data my_data){
         close(newfd);
       }
       else{
-        fprintf(stderr, "-> The command \\KEY is of type \"KEY k succ succ.IP succ.port\\n\".\n");
+        fprintf(stderr, "ERROR -> The command \\KEY is of type \"KEY k succ succ.IP succ.port\\n\".\n");
         return -1;
       }
     }
     else{
-      sprintf(msg, "ERROR -> Sorry I'm already busy with a Ring.\n");
+      sprintf(msg, "ERROR -> Something went wrong.\n");
       n = write(newfd, msg, strlen(msg));
       if (n==-1) /*error*/ exit(1);
       free(buffer);
