@@ -42,6 +42,8 @@ int main(int argc, char *argv[]){
   token = (char*)malloc((MAX+1)*sizeof(char));
   char* msg;
   msg = (char*)malloc((MAX+1)*sizeof(char));
+  char* received_message_buffer;
+  received_message_buffer = (char*)malloc((MAX+1)*sizeof(char));
   char eol = 0;
   int block = 0;
   int exit_flag = 0;
