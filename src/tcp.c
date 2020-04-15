@@ -1,14 +1,12 @@
+#include <arpa/inet.h>
+#include <unistd.h>
+#include <netinet/in.h>
+#include <netdb.h>
 #include <sys/time.h>
 #include <sys/types.h>
-#include <unistd.h>
-#include <unistd.h>
-#include <stdlib.h>
-#include <sys/types.h>
 #include <sys/socket.h>
-#include <netinet/in.h>
-#include <arpa/inet.h>
-#include <netdb.h>
 #include <string.h>
+#include <stdlib.h>
 #include <stdio.h>
 
 #include "server.h"
@@ -20,12 +18,12 @@ struct Program_connection init_tcp_sv(char* gate){
 
   struct Program_connection server;
 
-  server.fd = socket(AF_INET, SOCK_STREAM, 0);
+  server.fd = socket(AF_INET, SOCK_STREAM, 0); //TCP socket
   if (server.fd == -1) /**error*/ exit(1);
 
   memset(&server.hints, 0, sizeof server.hints);
-  server.hints.ai_family = AF_INET;
-  server.hints.ai_socktype = SOCK_STREAM;
+  server.hints.ai_family = AF_INET; //IPv4
+  server.hints.ai_socktype = SOCK_STREAM; //TCP socket
   server.hints.ai_flags = AI_PASSIVE;
 
   server.errcode = getaddrinfo(NULL, gate, &server.hints, &server.res);
@@ -163,12 +161,7 @@ int new_conection_to_me(int* afd, int newfd, struct Program_data my_data){
 int take_a_decision(struct Program_connection received, int response_fd, int pass_the_message_fd, struct Program_data* my_data){
 
   int key;
-  int succ_key;
   char eol = 0;
-  char* succ_ip;
-  succ_ip = malloc((MAX+1)*sizeof(char));
-  char* succ_gate;
-  succ_gate = malloc((MAX+1)*sizeof(char));
   char* token;
   token = (char*)malloc((MAX+1)*sizeof(char));
   char* msg;
