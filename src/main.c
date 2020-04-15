@@ -39,6 +39,15 @@ int main(int argc, char *argv[]){
 
   int key;
 
+/***************************************************************/
+	int entry_sv_key = 0;			/*chave do servidor ao qual se solicita a entrada no anel*/
+	char* entry_sv_ip = 0;		/*ip do servidor ao qual se solicita a entrada no anel*/
+	entry_sv_ip = (char*)malloc((MAX+1)*sizeof(char));
+	char* entry_sv_gate = 0;	/*porto do servidor ao qual se solicita a entrada no anel*/
+	entry_sv_gate = (char*)malloc((MAX+1)*sizeof(char));
+	int entry_ask = 0;			/*flag para a existencia de pedido de ligação*/
+/***************************************************************/
+
   char* buffer;
   buffer = (char*)malloc((MAX+1)*sizeof(char));
   char* token;
@@ -71,9 +80,22 @@ int main(int argc, char *argv[]){
     if(counter <= 0) /*error*/
       exit(1);
 
+/*********************************************************************************************/
+		/* WAITING TO READ AS UDP SERVER */
     if(FD_ISSET(udp_server.fd, &rfds)){
-      //udp_server = listen_udp_sv(udp_server);
+      udp_server.addrlen = sizeof(udp_server.addr);
+			if(udp_server.n = recvfrom(udp_server.fd, udp_server.buffer, 128, 0, (struct sockaddr*) &udp_server.addr, &udp_server.addrlen) != 0){
+				if (udp_server.n==-1) /*error*/ exit(1);
+				entry_ask = 1;
+				take_a_decision_udp(udp_server, udp_server.fd, &my_data);
+			}
+			else{
+				entry_ask = 0;
+        printf("Closed UDP Server connection.\n");
+        close(udp_server.fd);
+ 	     }
     }
+/*********************************************************************************************/
 
     /* WAITING FOR CONNECTING AS TCP SERVER*/
     if(FD_ISSET(tcp_server.fd, &rfds)){
@@ -172,14 +194,25 @@ int main(int argc, char *argv[]){
         }
       }
 
-      /*ENTRY: ... */
+/*********************************************************************************************/
+      /*ENTRY: adding a server in the ring without knowing it's location */
       else if(strcmp(token, "entry") == 0 && inside_a_ring == 0){
 
-        /* do stuff */
-
-        inside_a_ring = !(sentry(&my_data, tcp_client, msg, &state_cl));
-        printf("-> Server entered.\n");
-      }
+        if(sscanf(buffer, "%*s %d %d %s %s%c", &my_data.key, &entry_sv_key, entry_sv_ip, entry_sv_gate, &eol) == 5){
+					udp_client = init_udp_cl(entry_sv_ip, entry_sv_gate);
+					printf("-> UDP connection done. %d\n", udp_client.fd);
+					sprintf(msg,"EFND %d\n", my_data.key);
+				  udp_client.n = sendto(udp_client.fd, msg, sizeof(msg), 0, udp_client.res->ai_addr, udp_client.res->ai_addrlen);
+  				if(udp_client.n == -1) /*error*/ exit(1);
+  				if (udp_client.n==-1) /*error*/ exit(1);
+      	}
+				  else{
+          printf("-> The command \\entry is of type \"entry i boot boot.ip boot.gate\". Where i is a key.\n");
+          memset(buffer, 0, MAX);
+          memset(token, 0, MAX);
+        }
+			}
+/*********************************************************************************************/
 
       /*SENTRY: adding a server specifying it's successor */
       else if(strcmp(token, "sentry") == 0 && !(inside_a_ring)){

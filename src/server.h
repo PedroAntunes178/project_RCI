@@ -26,6 +26,10 @@ struct Program_connection {
   char buffer[128];
 };
 
+/*********************************************************************************************/
+int take_a_decision_udp(struct Program_connection, int, struct Program_data*);
+/*********************************************************************************************/
+
 struct Program_connection init_udp_sv(char*);
 struct Program_connection listen_udp_sv(struct Program_connection);
 void close_udp_sv(struct Program_connection);

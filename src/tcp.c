@@ -59,7 +59,7 @@ struct Program_connection init_tcp_cl(char* ip, char* gate){
   return(client);
 }
 
-int new_conection_to_me(int afd, int newfd, struct Program_data my_data){
+int new_conection_to_me(int* afd, int newfd, struct Program_data my_data){
 
   int n;
   char eol = 0;
@@ -77,8 +77,9 @@ int new_conection_to_me(int afd, int newfd, struct Program_data my_data){
   copy_gate = malloc((MAX+1)*sizeof(char));
 
   if((n = read(newfd, buffer, 128)) != 0){
+    strcpy(my_data.buffer, buffer);//vamos ter de arranjar forma para confirmar que a msg que queremos ler está toda no buffer
     if(n == -1) /*error*/ exit(1);
-    sscanf(buffer, "%s", token);
+    sscanf(my_data.buffer, "%s", token);
 
     /*NEW: Esta mensagem é usada em dois contextos diferentes. (1)(este caso) Um servidor entrante
     informa o seu futuro sucessor que pretende entrar no anel com chave i, endereço
@@ -86,23 +87,27 @@ int new_conection_to_me(int afd, int newfd, struct Program_data my_data){
     servidor de chave i, endereço IP i.IP e porto i.port pretende entrar no anel,
     para que o predecessor estabeleça o servidor entrante como seu sucessor.*/
     if(strcmp(token, "NEW") == 0){
-      if(sscanf(buffer, "%*s %d %s %s%c", &copy_key, copy_ip, copy_gate, &eol) == 4 && eol == '\n'){
-        n = write(afd, buffer, strlen(buffer));
+      if(sscanf(my_data.buffer, "%*s %d %s %s%c", &copy_key, copy_ip, copy_gate, &eol) == 4 && eol == '\n'){
+        n = write(*afd, my_data.buffer, strlen(my_data.buffer));
         if (n==-1) /*error*/ exit(1);
 
-        if(my_data.key!=my_data.succ_key){
-          sprintf(msg, "SUCC %d %s %s\n", my_data.succ_key, my_data.succ_ip, my_data.succ_gate);
-          n = write(newfd, msg, strlen(msg));
-          if (n==-1) /*error*/ exit(1);
-        }
-        else{//significa que é o segundo a se juntar ao anel
+        if(my_data.key==my_data.succ_key){
+          //significa que é o segundo a se juntar ao anel
           sprintf(msg, "SUCC %d %s %s\n", copy_key, copy_ip, copy_gate);
           n = write(newfd, msg, strlen(msg));
           if (n==-1) /*error*/ exit(1);
         }
+        else{
+          sprintf(msg, "SUCC %d %s %s\n", my_data.succ_key, my_data.succ_ip, my_data.succ_gate);
+          n = write(newfd, msg, strlen(msg));
+          if (n==-1) /*error*/ exit(1);
+        }
+
+        *afd = newfd;
+        my_data.state_sv = 1;
       }
       else{
-        sprintf(msg, "-> The command \\NEW is of type \"NEW i i.IP i.port\\n\".\n");
+        sprintf(msg, "ERROR -> The command \\NEW is of type \"NEW i i.IP i.port\\n\".\n");
         n = write(newfd, msg, strlen(msg));
         if (n==-1) /*error*/ exit(1);
         return -1;
@@ -114,16 +119,15 @@ int new_conection_to_me(int afd, int newfd, struct Program_data my_data){
     efeito, do servidor que pretende enviar a mensagem para o servidor que iniciou a
     pesquisa.*/
     else if(strcmp(token, "KEY") == 0){
-      int key = 0;
+      int find_key = 0;
       int i =0;
-      i = sscanf(msg, "%*s %d %d %s %s%c", &key, &copy_key, copy_ip, copy_gate, &eol) == 5;
+      i = sscanf(msg, "%*s %d %d %s %s%c", &find_key, &copy_key, copy_ip, copy_gate, &eol) == 5;
       fprintf(stderr, "%d\n", i);
-      if(sscanf(msg, "%*s %d %d %s %s%c", &key, &copy_key, copy_ip, copy_gate, &eol) == 5 && eol == '\n'){
-        fprintf(stderr, "%d\n", key);
+      if(sscanf(msg, "%*s %d %d %s %s%c", &find_key, &copy_key, copy_ip, copy_gate, &eol) == 5 && eol == '\n'){
+        fprintf(stderr, "%d\n", find_key);
         fprintf(stderr, "%d\n", copy_key);
         fprintf(stderr, "%s\n", copy_ip);
         fprintf(stderr, "%s\n", copy_gate);
-        return 0;
       }
       else{
         fprintf(stderr, "-> The command \\KEY is of type \"KEY k succ succ.IP succ.port\\n\".\n");
@@ -131,7 +135,7 @@ int new_conection_to_me(int afd, int newfd, struct Program_data my_data){
       }
     }
     else{
-      sprintf(msg, "Sorry I'm already busy with a Ring.\n");
+      sprintf(msg, "ERROR -> Sorry I'm already busy with a Ring.\n");
       n = write(newfd, msg, strlen(msg));
       if (n==-1) /*error*/ exit(1);
       free(buffer);
@@ -272,7 +276,7 @@ int take_a_decision(struct Program_connection received, int response_fd, int pas
 
   /*Invalid command, ignores it*/
   else{
-    write(2, "Invalid message: ", 17);
+    write(2, "Invalid message: \n", 17);
     write(2, received.buffer, received.n);
     return -1;
   }
