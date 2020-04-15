@@ -23,6 +23,8 @@ struct Program_connection init_udp_cl(char* ip, char* gate){
   client.errcode = getaddrinfo(ip, gate, &client.hints, &client.res);
   if (client.errcode != 0) /*error*/  exit(1);
 
+	return(client);
+
   }
 
 struct Program_connection request_udp_cl(struct Program_connection client, char* msg){
@@ -30,11 +32,12 @@ struct Program_connection request_udp_cl(struct Program_connection client, char*
   client.n = sendto(client.fd, msg, sizeof(msg), 0, client.res->ai_addr, client.res->ai_addrlen);
   if (client.n==-1) /*error*/ exit(1);
 
+/*
   client.addrlen = sizeof(client.addr);
   client.n = recvfrom(client.fd, client.buffer, 128, 0, (struct sockaddr*) &client.addr, &client.addrlen);
-  if(client.n == -1) /*error*/ exit(-1);
+  if(client.n == -1)  exit(-1);
 
   write(1, "echo: ", 6);
-  write(1, client.buffer, client.n);
+  write(1, client.buffer, client.n);*/
 
 }
