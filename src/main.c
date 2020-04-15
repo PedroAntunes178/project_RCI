@@ -43,6 +43,8 @@ int main(int argc, char *argv[]){
   token = (char*)malloc((MAX+1)*sizeof(char));
   char* msg;
   msg = (char*)malloc((MAX+1)*sizeof(char));
+  char* received_message_buffer;
+  received_message_buffer = (char*)malloc((MAX+1)*sizeof(char));
   char eol = 0;
   int inside_a_ring = 0;
   int exit_flag = 0;
@@ -83,19 +85,19 @@ int main(int argc, char *argv[]){
       tcp_server.addrlen = sizeof(tcp_server.addr);
       if((newfd = accept(tcp_server.fd, (struct sockaddr*) &tcp_server.addr,
             &tcp_server.addrlen)) == -1) /*error*/ exit(1);
-
-      if(!(my_data.state_sv)){
+      printf("CONNECTION DONE\n");
+      if(!(state_sv)){
         afd = newfd;
-        my_data.state_sv = 1;
-        fprintf(stderr, "Started first server connection.\n");
+        printf("newfd : %d\n", newfd);
+        state_sv = 1;
       }
-      else if(!(my_data.state_new_conection)){
-        new_conection_fd = newfd;
-        my_data.state_new_conection = 1;
-        fprintf(stderr, "Starting a new connection.\n");
+      else if(block){
+        new_conection_to_me(afd, newfd, my_data);
+        fprintf(stderr, "It passed\n");
+        afd = newfd;
       }
       else{
-      fprintf(stderr, "Can't make a conection right now.\n");
+      fprintf(stderr, "Sorry budy I ain't open for busyness...\n");
       close(newfd);
       }
     }
