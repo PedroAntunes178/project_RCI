@@ -239,6 +239,7 @@ int main(int argc, char *argv[]){
       /*EXIT: exits the application successfully*/
       else if(strcmp(buffer, "exit\n") == 0){
         leave(tcp_client, afd, &my_data);
+        free_program_data(my_data);
         free(buffer);
         free(token);
         fprintf(stderr, "\nExiting the application...\n");
@@ -271,13 +272,13 @@ struct Program_data init_program_data(){
   return init_data;
 }
 
-int free_program_data(struct Program_data* free_data){
-  free(free_data->ip);
-  free(free_data->gate);
-  free(free_data->succ_ip);
-  free(free_data->succ_gate);
-  free(free_data->s_succ_ip);
-  free(free_data->s_succ_gate);
+int free_program_data(struct Program_data free_data){
+  free(free_data.ip);
+  free(free_data.gate);
+  free(free_data.succ_ip);
+  free(free_data.succ_gate);
+  free(free_data.s_succ_ip);
+  free(free_data.s_succ_gate);
   return 0;
 }
 
@@ -285,7 +286,6 @@ int leave(struct Program_connection tcp_client, int afd, struct Program_data* my
   freeaddrinfo(tcp_client.res);
   close(tcp_client.fd);
   close(afd);
-  free_program_data(my_data);
   my_data->state_cl = 0;
   my_data->state_sv = 0;
   my_data->state_new_conection = 0;
