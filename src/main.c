@@ -21,7 +21,7 @@ int main(int argc, char *argv[]){
 
   if(argc != 3){
     exit(1);
-    fprintf(stderr, "Por favor chamar o programa tipo ./dkt <ip> <porto>\n", );
+    fprintf(stderr, "Por favor chamar o programa tipo ./dkt <ip> <porto>\n");
   }
 
   struct Program_data my_data;
@@ -92,8 +92,8 @@ int main(int argc, char *argv[]){
             &tcp_server.addrlen)) == -1) /*error*/ exit(1);
       if(!(my_data.state_sv)){
         afd = newfd;
-        state_sv = 1;
-        fprintf(stderr, "First connection done successfully.\n", );
+        my_data.state_sv = 1;
+        fprintf(stderr, "First connection done successfully.\n");
       }
       else if(!(my_data.state_new_conection)){
         new_conection_fd = newfd;
