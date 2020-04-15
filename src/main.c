@@ -173,6 +173,7 @@ int main(int argc, char *argv[]){
           strcpy(my_data.succ_gate, my_data.gate);
           strcpy(my_data.s_succ_ip, my_data.ip);
           strcpy(my_data.s_succ_gate, my_data.gate);
+          fprintf(stdout, "merda\n");
           tcp_client = init_tcp_cl(my_data.succ_ip, my_data.succ_gate);
           my_data.state_cl = 1;
           inside_a_ring = 1;
@@ -288,7 +289,7 @@ int leave(struct Program_connection tcp_client, int afd, struct Program_data* my
   my_data->state_cl = 0;
   my_data->state_sv = 0;
   my_data->state_new_conection = 0;
-  fprintf(stderr, "Leaving the ring...\n");
+  fprintf(stdout, "Leaving the ring...\n");
   return 0;
 }
 
@@ -303,10 +304,10 @@ int sentry(struct Program_data* my_data, struct Program_connection tcp_client, c
   tcp_client.n = write(tcp_client.fd, msg, MAX);
   if(tcp_client.n == -1) /*error*/ exit(1);
 
-  printf("Key : %d\n", my_data->key);
-  printf("Next server key: %d\n", my_data->succ_key);
-  printf("Next server ip: %s\n", my_data->succ_ip);
-  printf("Next server gate: %s\n", my_data->succ_gate);
-  printf("-> Server sentered.\n");
+  fprintf(stdout, "Key : %d\n", my_data->key);
+  fprintf(stdout, "Next server key: %d\n", my_data->succ_key);
+  fprintf(stdout, "Next server ip: %s\n", my_data->succ_ip);
+  fprintf(stdout, "Next server gate: %s\n", my_data->succ_gate);
+  fprintf(stderr, "-> Server sentered.\n");
   return 0;
  }
