@@ -16,11 +16,13 @@
 #define MAX 100
 #define MAXKEY 16
 
-int max(int, int);
 
 int main(int argc, char *argv[]){
 
-  if(argc != 3) exit(1);
+  if(argc != 3){
+    exit(1);
+    fprintf(stderr, "Por favor chamar o programa tipo ./dkt <ip> <porto>\n", );
+  }
 
   struct Program_data my_data;
   my_data = init_program_data();
@@ -55,6 +57,9 @@ int main(int argc, char *argv[]){
     FD_SET(udp_server.fd, &rfds);
     FD_SET(tcp_server.fd, &rfds);
     maxfd = max(udp_server.fd, tcp_server.fd) + 1;
+    /*
+    A sequência de ifs que se seguem servem para não inicializar os file descriptors sem eles serem necessários.
+    */
     if(my_data.state_new_conection){
       //printf("fd_set new_sv\n");
       FD_SET(new_conection_fd, &rfds);
@@ -85,19 +90,18 @@ int main(int argc, char *argv[]){
       tcp_server.addrlen = sizeof(tcp_server.addr);
       if((newfd = accept(tcp_server.fd, (struct sockaddr*) &tcp_server.addr,
             &tcp_server.addrlen)) == -1) /*error*/ exit(1);
-      printf("CONNECTION DONE\n");
-      if(!(state_sv)){
+      if(!(my_data.state_sv)){
         afd = newfd;
-        printf("newfd : %d\n", newfd);
         state_sv = 1;
+        fprintf(stderr, "First connection done successfully.\n", );
       }
-      else if(block){
-        new_conection_to_me(afd, newfd, my_data);
-        fprintf(stderr, "It passed\n");
-        afd = newfd;
+      else if(!(my_data.state_new_conection)){
+        new_conection_fd = newfd;
+        my_data.state_new_conection = 1;
+        fprintf(stderr, "Received new conection data.\n");
       }
       else{
-      fprintf(stderr, "Sorry budy I ain't open for busyness...\n");
+      fprintf(stderr, "To many connecction to be processed.\n");
       close(newfd);
       }
     }
@@ -105,11 +109,11 @@ int main(int argc, char *argv[]){
     /* WAITING TO READ AS TCP SERVER*/
     if(FD_ISSET(new_conection_fd, &rfds)){
       //printf("Entrou!!\n");
-      if(new_conection_to_me(&afd, new_conection_fd, my_data) != 0){ //se  new_connection retornar 0 seguenifica que está td bem.
-        close(new_conection_fd);
-        my_data.state_new_conection = 0;
-      }
-      fprintf(stderr, "Received new conection data.\n");
+      /*Se  new_connection retornar 0 seguenifica que está td bem.*/
+      new_conection_to_me(&afd, new_conection_fd, my_data);
+      new_conection_fd = -1;
+      my_data.state_new_conection = 0;
+      fprintf(stderr, "New connection processed successfully.\n");
     }
 
     /* WAITING TO READ AS TCP SERVER*/
@@ -117,7 +121,7 @@ int main(int argc, char *argv[]){
       //printf("Entrou!!\n");
       if((tcp_server.n = read(afd, tcp_server.buffer, 128)) != 0){
         if(tcp_server.n == -1) /*error*/ exit(1);
-        fprintf(stdout, "Received -> %s\n", tcp_server.buffer);
+        fprintf(stdout, "Received: %s\n", tcp_server.buffer);
         take_a_decision(tcp_server, afd, tcp_client.fd, &my_data);
       }
       else{
@@ -131,9 +135,8 @@ int main(int argc, char *argv[]){
     /* WAITING TO READ AS TCP CLIENT */
     if(FD_ISSET(tcp_client.fd, &rfds)){
       if((tcp_client.n = read(tcp_client.fd, tcp_client.buffer, 128)) != 0){
-        if(tcp_client.n == -1) /*error*/ exit(1);//é aqui que está a retornar um erro
-        write(1, "echo: ", 6);
-        write(1, tcp_client.buffer, tcp_client.n);
+        if(tcp_client.n == -1) /*error*/ exit(1);
+        fprintf(stdout, "echo: %s\n", tcp_client.buffer);
         take_a_decision(tcp_client, tcp_client.fd, afd, &my_data);
       }
       else{
@@ -188,16 +191,19 @@ int main(int argc, char *argv[]){
         /* do stuff */
 
         inside_a_ring = !(sentry(&my_data, tcp_client, msg));
-        printf("-> Server entered.\n");
+        fprintf(stdout, "-> Server entered.\n");
       }
 
       /*SENTRY: adding a server specifying it's successor */
       else if(strcmp(token, "sentry") == 0 && !(inside_a_ring)){
         if(sscanf(buffer, "%*s %d %d %s %s%c", &my_data.key, &my_data.succ_key, my_data.succ_ip, my_data.succ_gate, &eol) == 5 && eol == '\n'){
-          inside_a_ring = !(sentry(&my_data, tcp_client, msg));
+           if(sentry(&my_data, tcp_client, msg) == 0 ){
+             inside_a_ring = 1;
+           }
+           else fprintf(stdout, "I can't have the same key as my sucessor.\n");
         }
         else{
-          printf("-> The command \\sentry is of type \"sentry i succ.ip succ.gate\". Where i is a key.\n");
+          fprintf(stderr, "ERROR -> The command \\sentry is of type \"sentry i succ.ip succ.gate\". Where i is a key.\n");
           memset(buffer, 0, MAX);
           memset(token, 0, MAX);
         }
@@ -212,7 +218,7 @@ int main(int argc, char *argv[]){
       /* FALTA ADICIONAR O ESTADO DO SERVIDOR!!! */
       else if(strcmp(buffer, "show\n") == 0){
         if(inside_a_ring)
-          fprintf(stderr, "-> Key: %d\n-> IP: %s\n-> PORT: %s\n-> SuccKey: %d\n-> SuccIP: %s\n-> SuccPORT: %s\n-> S_SuccKey: %d\n-> S_SuccIP: %s\n-> S_SuccPORT: %s\n", my_data.key, my_data.ip, my_data.gate, my_data.succ_key, my_data.succ_ip, my_data.succ_gate, my_data.s_succ_key, my_data.s_succ_ip, my_data.s_succ_gate);
+          fprintf(stderr, "ERROR -> Key: %d\n-> IP: %s\n-> PORT: %s\n-> SuccKey: %d\n-> SuccIP: %s\n-> SuccPORT: %s\n-> S_SuccKey: %d\n-> S_SuccIP: %s\n-> S_SuccPORT: %s\n", my_data.key, my_data.ip, my_data.gate, my_data.succ_key, my_data.succ_ip, my_data.succ_gate, my_data.s_succ_key, my_data.s_succ_ip, my_data.s_succ_gate);
         else fprintf(stderr, "Not inside a ring, so I don't have a successor :( )\n");
       }
 
@@ -286,23 +292,20 @@ int leave(struct Program_connection tcp_client, int afd, struct Program_data* my
 }
 
 int sentry(struct Program_data* my_data, struct Program_connection tcp_client, char* msg){
-   if(my_data->key != my_data->succ_key){
-     tcp_client = init_tcp_cl(my_data->succ_ip, my_data->succ_gate);
-     my_data->state_cl = 1;
 
-     sprintf(msg, "NEW %d %s %s\n", my_data->key, my_data->ip, my_data->gate);
-     tcp_client.n = write(tcp_client.fd, msg, MAX);
-     if(tcp_client.n == -1) /*error*/ exit(1);
+  if(my_data->key == my_data->succ_key) return 1;
 
-     printf("Key : %d\n", my_data->key);
-     printf("Next server key: %d\n", my_data->succ_key);
-     printf("Next server ip: %s\n", my_data->succ_ip);
-     printf("Next server gate: %s\n", my_data->succ_gate);
-     printf("-> Server sentered.\n");
-     return 0;
-   }
-   else{
-     printf("Não posso ter um sucessor com uma chave igual a minha.");
-     return 1;
-   }
+  tcp_client = init_tcp_cl(my_data->succ_ip, my_data->succ_gate);
+  my_data->state_cl = 1;
+
+  sprintf(msg, "NEW %d %s %s\n", my_data->key, my_data->ip, my_data->gate);
+  tcp_client.n = write(tcp_client.fd, msg, MAX);
+  if(tcp_client.n == -1) /*error*/ exit(1);
+
+  printf("Key : %d\n", my_data->key);
+  printf("Next server key: %d\n", my_data->succ_key);
+  printf("Next server ip: %s\n", my_data->succ_ip);
+  printf("Next server gate: %s\n", my_data->succ_gate);
+  printf("-> Server sentered.\n");
+  return 0;
  }

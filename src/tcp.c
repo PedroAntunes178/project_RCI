@@ -102,7 +102,7 @@ int new_conection_to_me(int* afd, int newfd, struct Program_data my_data){
           n = write(newfd, msg, strlen(msg));
           if (n==-1) /*error*/ exit(1);
         }
-
+        close(*afd);
         *afd = newfd;
         my_data.state_sv = 1;
       }
@@ -128,6 +128,7 @@ int new_conection_to_me(int* afd, int newfd, struct Program_data my_data){
         fprintf(stderr, "%d\n", copy_key);
         fprintf(stderr, "%s\n", copy_ip);
         fprintf(stderr, "%s\n", copy_gate);
+        close(newfd);
       }
       else{
         fprintf(stderr, "-> The command \\KEY is of type \"KEY k succ succ.IP succ.port\\n\".\n");
