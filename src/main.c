@@ -277,8 +277,6 @@ int free_program_data(struct Program_data* free_data){
   free(free_data->succ_gate);
   free(free_data->s_succ_ip);
   free(free_data->s_succ_gate);
-  free_data->state_cl = 0;
-  free_data->state_sv = 0;
   return 0;
 }
 
@@ -287,6 +285,9 @@ int leave(struct Program_connection tcp_client, int afd, struct Program_data* my
   close(tcp_client.fd);
   close(afd);
   free_program_data(my_data);
+  my_data->state_cl = 0;
+  my_data->state_sv = 0;
+  my_data->state_new_conection = 0;
   fprintf(stderr, "Leaving the ring...\n");
   return 0;
 }
