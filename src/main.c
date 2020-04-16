@@ -11,7 +11,6 @@
 
 #include "server.h"
 
-#define MAX 100
 #define MAXKEY 16
 
 
@@ -37,12 +36,9 @@ int main(int argc, char *argv[]){
 
   int find_key;
 
-  char* buffer;
-  buffer = (char*)malloc((MAX+1)*sizeof(char));
-  char* token;
-  token = (char*)malloc((MAX+1)*sizeof(char));
-  char* msg;
-  msg = (char*)malloc((MAX+1)*sizeof(char));
+  char buffer[MAX];
+  char token[MAX];
+  char msg[MAX];
   char eol = 0;
   int inside_a_ring = 0;
 
@@ -105,9 +101,10 @@ int main(int argc, char *argv[]){
     if(FD_ISSET(afd, &rfds)){
       //printf("Entrou!!\n");
       //O codigo está stuck no read devia estar a ler new
+      memset(tcp_server.buffer, 0, MAX);
       if((tcp_server.n = read(afd, tcp_server.buffer, 128)) != 0){
         if(tcp_server.n == -1) /*error*/ exit(1);
-        fprintf(stdout, "Received: %s\n", tcp_server.buffer);
+        fprintf(stdout, "Received: %s", tcp_server.buffer);
         take_a_decision(&tcp_server, afd, tcp_client.fd, &my_data);
       }
       else{
@@ -120,6 +117,7 @@ int main(int argc, char *argv[]){
     /* WAITING TO READ AS NEW TCP SERVER*/
     if(FD_ISSET(new_conection_fd, &rfds)){
       //printf("Entrou!!\n");
+      memset(buffer, 0, MAX);
       if((tcp_server.n = read(new_conection_fd, buffer, 128)) != 0){
         if(tcp_server.n == -1) /*error*/ exit(1);
         afd = new_conection_to_me(afd, new_conection_fd, my_data, buffer);
@@ -136,9 +134,10 @@ int main(int argc, char *argv[]){
 
     /* WAITING TO READ AS TCP CLIENT */
     if(FD_ISSET(tcp_client.fd, &rfds)){
+      memset(tcp_client.buffer, 0, MAX);
       if((tcp_client.n = read(tcp_client.fd, tcp_client.buffer, 128)) != 0){
         if(tcp_client.n == -1) /*error*/ exit(1);
-        fprintf(stdout, "echo: %s\n", tcp_client.buffer);
+        fprintf(stdout, "echo: %s", tcp_client.buffer);
         take_a_decision(&tcp_client, tcp_client.fd, afd, &my_data);
       }
       else{
@@ -242,8 +241,6 @@ int main(int argc, char *argv[]){
       else if(strcmp(buffer, "exit\n") == 0){
         if(inside_a_ring) leave(tcp_client, afd, &my_data);
         free_program_data(my_data);
-        free(buffer);
-        free(token);
         fprintf(stderr, "\nExiting the application...\n");
         exit(EXIT_SUCCESS);
       }

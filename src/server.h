@@ -1,7 +1,7 @@
 #ifndef HEADER_FILE
 #define HEADER_FILE
 
-#define MAX 100
+#define MAX 128
 
 struct Program_data{
   int key;

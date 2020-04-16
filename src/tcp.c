@@ -11,7 +11,6 @@
 
 #include "server.h"
 
-#define MAX 100
 #define MAXKEY 16
 
 struct Program_connection init_tcp_sv(char* gate){
