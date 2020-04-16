@@ -45,10 +45,8 @@ int main(int argc, char *argv[]){
 
 /***************************************************************/
 	int entry_sv_key = 0;			/*chave do servidor ao qual se solicita a entrada no anel*/
-	char* entry_sv_ip = 0;		/*ip do servidor ao qual se solicita a entrada no anel*/
-	entry_sv_ip = (char*)malloc((MAX+1)*sizeof(char));
-	char* entry_sv_gate = 0;	/*porto do servidor ao qual se solicita a entrada no anel*/
-	entry_sv_gate = (char*)malloc((MAX+1)*sizeof(char));
+	char entry_sv_ip[MAX];		/*ip do servidor ao qual se solicita a entrada no anel*/
+	char entry_sv_gate[MAX];	/*porto do servidor ao qual se solicita a entrada no anel*/
 	/*int entry_ask = 0;*/			/*flag para a existencia de pedido de ligação*/
 	int state_udp_cl = 0;
 	int key_to_find = 0;
