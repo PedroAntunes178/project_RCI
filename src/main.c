@@ -73,7 +73,26 @@ int main(int argc, char *argv[]){
       exit(1);
 
     if(FD_ISSET(udp_server.fd, &rfds)){
-      //udp_server = listen_udp_sv(udp_server);
+      memset(udp_server.buffer, 0, MAX);
+      udp_server.addr = { 0 };
+      udp_server.addrlen = sizeof(udp_server.addr);
+      if((udp_server.n = recvfrom(udp_server.fd, udp_server.buffer, 128, 0, (struct sockaddr*) &udp_server.addr, &udp_server.addrlen)) != 0){
+        if (udp_server.n==-1) /*error*/ exit(1);
+        sscanf(udp_server.buffer, "%s", token);
+        fprintf(stderr, "Received data in udp_server: %s", udp_server.buffer);
+        /*EFND: Um servidor solicita a si qual a posição que lhe corresponde de acordo com a chave*/
+        if(strcmp(token, "EFND") == 0){
+          /*entry_ask = 1;*/
+          if(sscanf(udp_server.buffer, "%*s %d%c", &key_to_find, &eol) == 2 && eol == '\n'){
+            fprintf(stdout, "EXECUTAR O FIND!\nE manda EKEY ao cliente udp.\n");
+            memset(msg, 0, MAX);
+            sprintf(msg, "EKEY %d %d 127.0.0.1 58000\n", key_to_find, key_to_find);
+            printf("\nmessage size %ld\n", strlen(msg));
+            udp_server.n = sendto(udp_server.fd, msg, strlen(msg), 0, (struct sockaddr*) &udp_server.addr, udp_server.addrlen);
+            if (udp_server.n==-1) /*error*/ exit(1);
+          }
+        }
+      }
     }
 
     /* WAITING FOR CONNECTING AS TCP SERVER*/
