@@ -116,6 +116,29 @@ int main(int argc, char *argv[]){
       }
     }
 
+    /* WAITING TO READ AS UDP CLIENT */
+    if(FD_ISSET(udp_client.fd, &rfds)){
+      memset(udp_client.buffer, 0, MAX);
+      udp_client.addrlen = sizeof(udp_client.addr);
+      if((udp_client.n = recvfrom(udp_client.fd, udp_client.buffer, 128, 0, (struct sockaddr*) &udp_client.addr, &udp_client.addrlen)) != 0){
+        if(udp_client.n == -1) /*error*/ exit(1);
+        fprintf(stdout, "Received message as client: %s\n", udp_client.buffer);
+        sscanf(udp_client.buffer, "%s", token);
+        /*EKEY: O servidor recebe uma resposta com a sua posição no anel. */
+        if(strcmp(token, "EKEY") == 0){
+          if(sscanf(udp_client.buffer, "%*s %d %d %s %s%c", &my_data.key, &my_data.succ_key, my_data.succ_ip, my_data.succ_gate, &eol) == 5 && eol == '\n'){
+            fprintf(stderr, "EXECUTAR O SENTRY!\n");
+          }
+        }
+      }
+      else{
+        fprintf(stderr, "Closed UDP Client connection.\n");
+        freeaddrinfo(udp_client.res);
+        close(udp_client.fd);
+        state_udp_cl = 0;
+      }
+    }
+
     /* WAITING TO READ AS TCP SERVER*/
     if(FD_ISSET(afd, &rfds)){
       //printf("Entrou!!\n");
@@ -132,6 +155,7 @@ int main(int argc, char *argv[]){
         my_data.state_sv = 0;
       }
     }
+
 
     /* WAITING TO READ AS NEW TCP SERVER*/
     if(FD_ISSET(new_conection_fd, &rfds)){
@@ -150,6 +174,7 @@ int main(int argc, char *argv[]){
         my_data.state_new_conection = 0;
       }
     }
+
 
     /* WAITING TO READ AS TCP CLIENT */
     if(FD_ISSET(tcp_client.fd, &rfds)){
