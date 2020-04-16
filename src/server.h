@@ -40,13 +40,13 @@ void close_udp_cl(struct Program_connection);
 
 struct Program_connection init_tcp_sv(char*);
 struct Program_connection init_tcp_cl(char*, char*);
-int new_conection_to_me(int*, int, struct Program_data);
-int take_a_decision(struct Program_connection, int, int, struct Program_data*);
+int new_conection_to_me(int, int, struct Program_data, char*);
+int take_a_decision(struct Program_connection*, int, int, struct Program_data*);
 
 int max(int, int);
 struct Program_data init_program_data();
 int free_program_data(struct Program_data);
 int leave(struct Program_connection, int, struct Program_data*);
-int sentry(struct Program_data*, struct Program_connection, char*);
+int sentry(struct Program_data*, struct Program_connection*, char*);
 
 #endif

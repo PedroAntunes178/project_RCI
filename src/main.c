@@ -56,17 +56,17 @@ int main(int argc, char *argv[]){
     A sequência de ifs que se seguem servem para não inicializar os file descriptors sem eles serem necessários.
     */
     if(my_data.state_new_conection){
-      printf("fd_set new_conection\n");
+      fprintf(stderr, "fd_set new_conection: %d\n", new_conection_fd);
       FD_SET(new_conection_fd, &rfds);
       maxfd = max(maxfd, new_conection_fd) + 1;
     }
     if(my_data.state_sv){
-      printf("fd_set sv\n");
+      fprintf(stderr, "fd_set sv: %d\n", afd);
       FD_SET(afd, &rfds);
       maxfd = max(maxfd, afd) + 1;
     }
     if(my_data.state_cl){
-      printf("fd_set cl\n");
+      fprintf(stderr, "fd_set cl: %d\n", tcp_client.fd);
       FD_SET(tcp_client.fd, &rfds);
       maxfd = max(maxfd, tcp_client.fd) + 1;
     }
@@ -88,12 +88,12 @@ int main(int argc, char *argv[]){
       if(!(my_data.state_sv)){
         afd = newfd;
         my_data.state_sv = 1;
-        fprintf(stderr, "First connection done successfully.\n");
+        fprintf(stdout, "First connection done successfully.\n");
       }
       else if(!(my_data.state_new_conection)){
         new_conection_fd = newfd;
         my_data.state_new_conection = 1;
-        fprintf(stderr, "Received new conection data.\n");
+        fprintf(stdout, "Received new conection data.\n");
       }
       else{
       fprintf(stderr, "To many connecction to be processed.\n");
@@ -104,20 +104,28 @@ int main(int argc, char *argv[]){
     /* WAITING TO READ AS TCP SERVER*/
     if(FD_ISSET(new_conection_fd, &rfds)){
       //printf("Entrou!!\n");
-      /*Se  new_connection retornar 0 seguenifica que está td bem.*/
-      new_conection_to_me(&afd, new_conection_fd, my_data);
-      new_conection_fd = -1;
-      my_data.state_new_conection = 0;
-      fprintf(stderr, "New connection processed successfully.\n");
+      if((tcp_server.n = read(new_conection_fd, buffer, 128)) != 0){
+        if(tcp_server.n == -1) /*error*/ exit(1);
+        afd = new_conection_to_me(afd, new_conection_fd, my_data, buffer);
+        new_conection_fd = -1;
+        my_data.state_new_conection = 0;
+        fprintf(stdout, "New connection processed successfully.\n");
+      }
+      else{
+        fprintf(stderr, "Connection lost with new_conection.\n");
+        close(new_conection_fd);
+        my_data.state_new_conection = 0;
+      }
     }
 
     /* WAITING TO READ AS TCP SERVER*/
     if(FD_ISSET(afd, &rfds)){
       //printf("Entrou!!\n");
+      fprintf(stderr, "afd: %d\n", afd);
       if((tcp_server.n = read(afd, tcp_server.buffer, 128)) != 0){
         if(tcp_server.n == -1) /*error*/ exit(1);
         fprintf(stdout, "Received: %s\n", tcp_server.buffer);
-        take_a_decision(tcp_server, afd, tcp_client.fd, &my_data);
+        take_a_decision(&tcp_server, afd, tcp_client.fd, &my_data);
       }
       else{
         fprintf(stderr, "Connection lost with predecessor.\n");
@@ -132,7 +140,7 @@ int main(int argc, char *argv[]){
       if((tcp_client.n = read(tcp_client.fd, tcp_client.buffer, 128)) != 0){
         if(tcp_client.n == -1) /*error*/ exit(1);
         fprintf(stdout, "echo: %s\n", tcp_client.buffer);
-        take_a_decision(tcp_client, tcp_client.fd, afd, &my_data);
+        take_a_decision(&tcp_client, tcp_client.fd, afd, &my_data);
       }
       else{
         fprintf(stdout, "Connection lost with sucessor.\nEstablishing connection to new sucessor...\n");
@@ -168,7 +176,6 @@ int main(int argc, char *argv[]){
           strcpy(my_data.succ_gate, my_data.gate);
           strcpy(my_data.s_succ_ip, my_data.ip);
           strcpy(my_data.s_succ_gate, my_data.gate);
-          fprintf(stdout, "merda\n");
           tcp_client = init_tcp_cl(my_data.succ_ip, my_data.succ_gate);
           my_data.state_cl = 1;
           inside_a_ring = 1;
@@ -186,14 +193,14 @@ int main(int argc, char *argv[]){
 
         /* do stuff */
 
-        inside_a_ring = !(sentry(&my_data, tcp_client, msg));
+        inside_a_ring = !(sentry(&my_data, &tcp_client, msg));
         fprintf(stdout, "-> Server entered.\n");
       }
 
       /*SENTRY: adding a server specifying it's successor */
       else if(strcmp(token, "sentry") == 0 && !(inside_a_ring)){
         if(sscanf(buffer, "%*s %d %d %s %s%c", &my_data.key, &my_data.succ_key, my_data.succ_ip, my_data.succ_gate, &eol) == 5 && eol == '\n'){
-           if(sentry(&my_data, tcp_client, msg) == 0 ){
+           if(sentry(&my_data, &tcp_client, msg) == 0 ){
              inside_a_ring = 1;
            }
            else fprintf(stdout, "I can't have the same key as my sucessor.\n");
@@ -289,16 +296,16 @@ int leave(struct Program_connection tcp_client, int afd, struct Program_data* my
   return 0;
 }
 
-int sentry(struct Program_data* my_data, struct Program_connection tcp_client, char* msg){
+int sentry(struct Program_data* my_data, struct Program_connection* tcp_client, char* msg){
 
   if(my_data->key == my_data->succ_key) return 1;
 
-  tcp_client = init_tcp_cl(my_data->succ_ip, my_data->succ_gate);
+  *tcp_client = init_tcp_cl(my_data->succ_ip, my_data->succ_gate);
   my_data->state_cl = 1;
 
   sprintf(msg, "NEW %d %s %s\n", my_data->key, my_data->ip, my_data->gate);
-  tcp_client.n = write(tcp_client.fd, msg, MAX);
-  if(tcp_client.n == -1) /*error*/ exit(1);
+  tcp_client->n = write(tcp_client->fd, msg, MAX);
+  if(tcp_client->n == -1) /*error*/ exit(1);
 
   fprintf(stdout, "Key : %d\n", my_data->key);
   fprintf(stdout, "Next server key: %d\n", my_data->succ_key);

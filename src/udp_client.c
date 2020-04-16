@@ -23,7 +23,8 @@ struct Program_connection init_udp_cl(char* ip, char* gate){
   client.errcode = getaddrinfo(ip, gate, &client.hints, &client.res);
   if (client.errcode != 0) /*error*/  exit(1);
 
-  }
+  return client;
+}
 
 struct Program_connection request_udp_cl(struct Program_connection client, char* msg){
 
@@ -37,4 +38,5 @@ struct Program_connection request_udp_cl(struct Program_connection client, char*
   write(1, "echo: ", 6);
   write(1, client.buffer, client.n);
 
+  return client;
 }

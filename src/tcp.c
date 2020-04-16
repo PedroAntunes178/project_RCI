@@ -57,12 +57,10 @@ struct Program_connection init_tcp_cl(char* ip, char* gate){
   return(client);
 }
 
-int new_conection_to_me(int* afd, int newfd, struct Program_data my_data){
+int new_conection_to_me(int afd, int new_conection_fd, struct Program_data my_data, char* buffer){
 
   int n;
   char eol = 0;
-  char* buffer;
-  buffer = (char*)malloc((MAX+1)*sizeof(char));
   char* token;
   token = (char*)malloc((MAX+1)*sizeof(char));
   char* msg;
@@ -73,85 +71,77 @@ int new_conection_to_me(int* afd, int newfd, struct Program_data my_data){
   copy_ip = malloc((MAX+1)*sizeof(char));
   char* copy_gate;
   copy_gate = malloc((MAX+1)*sizeof(char));
-  if((n = read(newfd, buffer, 128)) != 0){
-    strcpy(my_data.buffer, buffer); //vamos ter de arranjar forma para confirmar que a msg que queremos ler está toda no buffer
-    if(n == -1) /*error*/ exit(1);
-    sscanf(buffer, "%s", token);
 
-    /*NEW: Esta mensagem é usada em dois contextos diferentes. (1)(este caso) Um servidor entrante
-    informa o seu futuro sucessor que pretende entrar no anel com chave i, endereço
-    IP i.IP e porto i.port. (2) Um servidor informa o seu atual predecessor que o
-    servidor de chave i, endereço IP i.IP e porto i.port pretende entrar no anel,
-    para que o predecessor estabeleça o servidor entrante como seu sucessor.*/
-    if(strcmp(token, "NEW") == 0){
-      if(sscanf(buffer, "%*s %d %s %s%c", &copy_key, copy_ip, copy_gate, &eol) == 4 && eol == '\n'){
-        n = write(*afd, my_data.buffer, strlen(my_data.buffer));
+  //vamos ter de arranjar forma para confirmar que a msg que queremos ler está toda no buffer
+  strcpy(my_data.buffer, buffer);
+  sscanf(buffer, "%s", token);
+  fprintf(stderr, "New message received: %s", buffer);
+
+  /*NEW: Esta mensagem é usada em dois contextos diferentes. (1)(este caso) Um servidor entrante
+  informa o seu futuro sucessor que pretende entrar no anel com chave i, endereço
+  IP i.IP e porto i.port. (2) Um servidor informa o seu atual predecessor que o
+  servidor de chave i, endereço IP i.IP e porto i.port pretende entrar no anel,
+  para que o predecessor estabeleça o servidor entrante como seu sucessor.*/
+  if(strcmp(token, "NEW") == 0){
+    if(sscanf(buffer, "%*s %d %s %s%c", &copy_key, copy_ip, copy_gate, &eol) == 4 && eol == '\n'){
+      n = write(afd, my_data.buffer, strlen(my_data.buffer));
+      if (n==-1) /*error*/ exit(1);
+      if(my_data.key==my_data.succ_key){
+        //significa que é o segundo a se juntar ao anel
+        sprintf(msg, "SUCC %d %s %s\n", copy_key, copy_ip, copy_gate);
+        //fprintf(stderr, "%s", msg);
+        n = write(new_conection_fd, msg, strlen(msg));
         if (n==-1) /*error*/ exit(1);
-
-        if(my_data.key==my_data.succ_key){
-          //significa que é o segundo a se juntar ao anel
-          sprintf(msg, "SUCC %d %s %s\n", copy_key, copy_ip, copy_gate);
-          n = write(newfd, msg, strlen(msg));
-          if (n==-1) /*error*/ exit(1);
-        }
-        else{
-          sprintf(msg, "SUCC %d %s %s\n", my_data.succ_key, my_data.succ_ip, my_data.succ_gate);
-          n = write(newfd, msg, strlen(msg));
-          if (n==-1) /*error*/ exit(1);
-        }
-        close(*afd);
-        *afd = newfd;
-        my_data.state_sv = 1;
       }
       else{
-        sprintf(msg, "ERROR -> The command \\NEW is of type \"NEW i i.IP i.port\\n\".\n");
-        n = write(newfd, msg, strlen(msg));
+        sprintf(msg, "SUCC %d %s %s\n", my_data.succ_key, my_data.succ_ip, my_data.succ_gate);
+        n = write(new_conection_fd, msg, strlen(msg));
         if (n==-1) /*error*/ exit(1);
-        return -1;
       }
+      close(afd);
+      my_data.state_sv = 1;
+      free(token);
+      free(msg);
+      free(copy_ip);
+      free(copy_gate);
+      return new_conection_fd;
     }
-
-    /*KEY: Um servidor informa o servidor que iniciou a pesquisa da chave k que esta chave
-    se encontra armazenada no seu sucessor succ com endereço IP succ.IP e porto
-    succ.port. Esta mensagem é enviada sobre uma sessão TCP criada para o
-    efeito, do servidor que pretende enviar a mensagem para o servidor que iniciou a
-    pesquisa.*/
-    else if(strcmp(token, "KEY") == 0){
-      int find_key = 0;
-      int i =0;
-      i = sscanf(msg, "%*s %d %d %s %s%c", &find_key, &copy_key, copy_ip, copy_gate, &eol) == 5;
-      fprintf(stderr, "%d\n", i);
-      if(sscanf(msg, "%*s %d %d %s %s%c", &find_key, &copy_key, copy_ip, copy_gate, &eol) == 5 && eol == '\n'){
-        fprintf(stderr, "%d\n", find_key);
-        fprintf(stderr, "%d\n", copy_key);
-        fprintf(stderr, "%s\n", copy_ip);
-        fprintf(stderr, "%s\n", copy_gate);
-        close(newfd);
-      }
-      else{
-        fprintf(stderr, "ERROR -> The command \\KEY is of type \"KEY k succ succ.IP succ.port\\n\".\n");
-        return -1;
-      }
+    else{
+      fprintf(stderr, "ERROR -> The command \\NEW is of type \"NEW i i.IP i.port\\n\".\n");
     }
   }
-  else{
-    sprintf(msg, "ERROR -> Something went wrong with the new connecction.\n");
-    fprintf(stderr, "%s\n", msg);
-    n = write(newfd, msg, strlen(msg));
-    if (n==-1) /*error*/ exit(1);
-    return 1;
+
+  /*KEY: Um servidor informa o servidor que iniciou a pesquisa da chave k que esta chave
+  se encontra armazenada no seu sucessor succ com endereço IP succ.IP e porto
+  succ.port. Esta mensagem é enviada sobre uma sessão TCP criada para o
+  efeito, do servidor que pretende enviar a mensagem para o servidor que iniciou a
+  pesquisa.*/
+  else if(strcmp(token, "KEY") == 0){
+    int find_key = 0;
+    int i =0;
+    i = sscanf(msg, "%*s %d %d %s %s%c", &find_key, &copy_key, copy_ip, copy_gate, &eol) == 5;
+    fprintf(stderr, "%d\n", i);
+    if(sscanf(msg, "%*s %d %d %s %s%c", &find_key, &copy_key, copy_ip, copy_gate, &eol) == 5 && eol == '\n'){
+      fprintf(stderr, "%d\n", find_key);
+      fprintf(stderr, "%d\n", copy_key);
+      fprintf(stderr, "%s\n", copy_ip);
+      fprintf(stderr, "%s\n", copy_gate);
+      close(new_conection_fd);
+    }
+    else{
+      fprintf(stderr, "ERROR -> The command \\KEY is of type \"KEY k succ succ.IP succ.port\\n\".\n");
+    }
   }
   fprintf(stderr, "bazzoy\n");
-  free(buffer);
   free(token);
   free(msg);
   free(copy_ip);
   free(copy_gate);
-  return 0;
+  return afd;
 }
 
 
-int take_a_decision(struct Program_connection received, int response_fd, int pass_the_message_fd, struct Program_data* my_data){
+int take_a_decision(struct Program_connection* received, int response_fd, int pass_the_message_fd, struct Program_data* my_data){
 
   int key;
   char eol = 0;
@@ -170,15 +160,14 @@ int take_a_decision(struct Program_connection received, int response_fd, int pas
   og_gate = (char*)malloc((MAX+1)*sizeof(char));
   struct Program_connection tcp_sendkey;  /* cliente temporário para enviar info do FND */
 
-
-  sscanf(received.buffer, "%s", token);
+  sscanf(received->buffer, "%s", token);
 
   /*SUCCCONF: Um servidor informa outro que este se tornou o seu sucessor. */
   if(strcmp(token, "SUCCCONF") == 0){
-    if(sscanf(received.buffer, "%*s%c", &eol) == 1 && eol == '\n'){
+    if(sscanf(received->buffer, "%*s%c", &eol) == 1 && eol == '\n'){
       sprintf(msg, "SUCC %d %s %s\n", my_data->succ_key, my_data->succ_ip, my_data->succ_gate);
-      received.n = write(response_fd, msg, strlen(msg));
-      if (received.n==-1) /*error*/ exit(1);
+      received->n = write(response_fd, msg, strlen(msg));
+      if (received->n==-1) /*error*/ exit(1);
       return 0;
     }
     else{
@@ -190,8 +179,8 @@ int take_a_decision(struct Program_connection received, int response_fd, int pas
   /*SUCC: Um servidor informa o seu predecessor que o seu sucessor é succ com endereço
   IP succ.IP e porto succ.port.*/
   else if(strcmp(token, "SUCC") == 0){
-    if(sscanf(received.buffer, "%*s %d %s %s%c", &my_data->s_succ_key, my_data->s_succ_ip, my_data->s_succ_gate, &eol) == 4 && eol == '\n'){
-      printf("Entrou aqui, depois completo...\n");
+    if(sscanf(received->buffer, "%*s %d %s %s%c", &my_data->s_succ_key, my_data->s_succ_ip, my_data->s_succ_gate, &eol) == 4 && eol == '\n'){
+      fprintf(stderr, "Information about the sucessor of my sucessor arived.\n");
       return 0;
     }
     else{
@@ -206,18 +195,19 @@ int take_a_decision(struct Program_connection received, int response_fd, int pas
   servidor de chave i, endereço IP i.IP e porto i.port pretende entrar no anel,
   para que o predecessor estabeleça o servidor entrante como seu sucessor.*/
   else if(strcmp(token, "NEW") == 0){
-    if(sscanf(received.buffer, "%*s %d %s %s%c", &my_data->succ_key, my_data->succ_ip, my_data->succ_gate, &eol) == 4 && eol == '\n'){
-      freeaddrinfo(received.res);
+    fprintf(stderr, "aqui shit hole\n");
+    if(sscanf(received->buffer, "%*s %d %s %s%c", &my_data->succ_key, my_data->succ_ip, my_data->succ_gate, &eol) == 4 && eol == '\n'){
+      freeaddrinfo(received->res);
       close(response_fd);
-      received = init_tcp_cl(my_data->succ_ip, my_data->succ_gate);
+      *received = init_tcp_cl(my_data->succ_ip, my_data->succ_gate);
 
       sprintf(msg, "SUCCCONF\n");
-      received.n = write(response_fd, msg, strlen(msg));
-      if (received.n==-1) /*error*/ exit(1);
+      received->n = write(response_fd, msg, strlen(msg));
+      if (received->n==-1) /*error*/ exit(1);
 
       sprintf(msg, "SUCC %d %s %s\n", my_data->succ_key, my_data->succ_ip, my_data->succ_gate);
-      received.n = write(pass_the_message_fd, msg, strlen(msg));
-      if (received.n==-1) /*error*/ exit(1);
+      received->n = write(pass_the_message_fd, msg, strlen(msg));
+      if (received->n==-1) /*error*/ exit(1);
       return 0;
     }
     else{
@@ -230,7 +220,7 @@ int take_a_decision(struct Program_connection received, int response_fd, int pas
   servidor i com endereço IP i.IP e porto i.port. (O caráter \n delimita todas
   as mensagens enviadas sobre TCP.)*/
   else if(strcmp(token, "FND") == 0){
-    if(sscanf(received.buffer, "%*s %d %d %s %s%c", &key, &og_key, og_ip, og_gate, &eol) == 5 && eol == '\n'){
+    if(sscanf(received->buffer, "%*s %d %d %s %s%c", &key, &og_key, og_ip, og_gate, &eol) == 5 && eol == '\n'){
       /* calculate the distance from the key to the own server */
       if((my_data->key - key) < 0)
         own_dist = my_data->key - key + MAXKEY;
@@ -242,16 +232,15 @@ int take_a_decision(struct Program_connection received, int response_fd, int pas
       /* compares the two distances and acts accordingly */
       if(own_dist < succ_dist){
         sprintf(msg, "FND %d %d %s %s\n", key, og_key, og_ip, og_gate);
-        received.n = write(pass_the_message_fd, msg, MAX);
-        if(received.n == -1) /*error*/ exit(1);
+        received->n = write(pass_the_message_fd, msg, MAX);
+        if(received->n == -1) /*error*/ exit(1);
       }
       else{
         tcp_sendkey = init_tcp_cl(og_ip, og_gate);
         sprintf(msg, "KEY %d %d %s %s\n", key, my_data->key, my_data->succ_ip, my_data->succ_gate);
         tcp_sendkey.n = write(tcp_sendkey.fd, msg, MAX);
-        fprintf(stderr, "-> Key found in my successor.\n");
         if(tcp_sendkey.n == 1) /*error*/ exit(1);
-
+        fprintf(stderr, "-> Key found in my successor.\n");
       }
       return 0;
     }
@@ -263,8 +252,7 @@ int take_a_decision(struct Program_connection received, int response_fd, int pas
 
   /*Invalid command, ignores it*/
   else{
-    write(2, "Invalid message: \n", 17);
-    write(2, received.buffer, received.n);
+    fprintf(stderr, "Received invalid TCP message.\n");
     return -1;
   }
   return 0;//on sucess
