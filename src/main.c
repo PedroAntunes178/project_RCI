@@ -28,13 +28,20 @@ int main(int argc, char *argv[]){
 
   struct Program_connection udp_server = init_udp_sv(argv[2]);
   struct Program_connection tcp_server = init_tcp_sv(argv[2]);
-//  struct Program_connection udp_client;
+  struct Program_connection udp_client;
   struct Program_connection tcp_client;
   tcp_client.fd = -1;
+	udp_client.fd = -1;
   fd_set rfds;
   int maxfd, counter, newfd, afd = -1, new_conection_fd = -1;
 
   int find_key;
+
+  int entry_sv_key = 0;			/*chave do servidor ao qual se solicita a entrada no anel*/
+  char entry_sv_ip[MAX];		/*ip do servidor ao qual se solicita a entrada no anel*/
+  char entry_sv_gate[MAX];	/*porto do servidor ao qual se solicita a entrada no anel*/
+  int state_udp_cl = 0;
+  int key_to_find = 0;
 
   char buffer[MAX];
   char token[MAX];
@@ -51,6 +58,11 @@ int main(int argc, char *argv[]){
     /*
     A sequência de ifs que se seguem servem para não inicializar os file descriptors sem eles serem necessários.
     */
+    if(state_udp_cl){
+      fprintf(stderr, "fd_set udp_cl: %d\n", udp_client.fd);
+      FD_SET(udp_client.fd, &rfds);
+      maxfd = max(maxfd, udp_client.fd) + 1;
+    }
     if(my_data.state_new_conection){
       fprintf(stderr, "fd_set new_conection: %d\n", new_conection_fd);
       FD_SET(new_conection_fd, &rfds);
@@ -74,7 +86,6 @@ int main(int argc, char *argv[]){
 
     if(FD_ISSET(udp_server.fd, &rfds)){
       memset(udp_server.buffer, 0, MAX);
-      udp_server.addr = { 0 };
       udp_server.addrlen = sizeof(udp_server.addr);
       if((udp_server.n = recvfrom(udp_server.fd, udp_server.buffer, 128, 0, (struct sockaddr*) &udp_server.addr, &udp_server.addrlen)) != 0){
         if (udp_server.n==-1) /*error*/ exit(1);
@@ -234,11 +245,21 @@ int main(int argc, char *argv[]){
 
       /*ENTRY: ... */
       else if(strcmp(token, "entry") == 0 && inside_a_ring == 0){
-
-        /* do stuff */
-
-        inside_a_ring = !(sentry(&my_data, &tcp_client, msg));
-        fprintf(stdout, "-> Server entered.\n");
+        if(sscanf(buffer, "%*s %d %d %s %s%c", &my_data.key, &entry_sv_key, entry_sv_ip, entry_sv_gate, &eol) == 5 && eol == '\n'){
+					udp_client = init_udp_cl(entry_sv_ip, entry_sv_gate);
+					state_udp_cl = 1;
+					fprintf(stderr,"-> UDP connection done. %d\n", udp_client.fd);
+					memset(msg, 0, MAX);
+					sprintf(msg,"EFND %d\n", my_data.key);
+				  udp_client.n = sendto(udp_client.fd, msg, strlen(msg), 0, udp_client.res->ai_addr, udp_client.res->ai_addrlen);
+  				if(udp_client.n == -1) /*error*/ exit(1);
+					fprintf(stderr, "-> Sent message as udp client: %s", msg);
+      	}
+				  else{
+          fprintf(stdout, "-> The command \\entry is of type \"entry i boot boot.ip boot.gate\". Where i is a key.\n");
+          memset(buffer, 0, MAX);
+          memset(token, 0, MAX);
+        }
       }
 
       /*SENTRY: adding a server specifying it's successor */
