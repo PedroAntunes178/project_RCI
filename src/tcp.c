@@ -138,19 +138,19 @@ int take_a_decision(struct Program_connection* received, int response_fd, int pa
 
   int key;
   char eol = 0;
-  char* token;
-  token = (char*)malloc((MAX+1)*sizeof(char));
-  char* msg;
-  msg = (char*)malloc((MAX+1)*sizeof(char));
+  char token[MAX];
+  memset(token, 0, MAX);
+  char msg[MAX];
+  memset(msg, 0, MAX);
 
   /* variáveis extra usadas para a funcionalidade FIND*/
   int og_key;     /* chave do: servidor que fez o pedido em FND ou do servidor que tem a chave em KEY*/
   int own_dist;   /* distância do próprio servidor à chave */
   int succ_dist;  /* distância do sucessor à chave */
-  char* og_ip;    /* ip do: servidor que fez o pedido em FND ou do servidor que tem a chave em KEY */
-  og_ip = (char*)malloc((MAX+1)*sizeof(char));
-  char* og_gate;  /* porta do: servidor que fez o pedido em FND ou do servidor que tem a chave em KEY */
-  og_gate = (char*)malloc((MAX+1)*sizeof(char));
+  char og_ip[MAX];    /* ip do: servidor que fez o pedido em FND ou do servidor que tem a chave em KEY */
+  memset(og_ip, 0, MAX);
+  char og_gate[MAX];  /* porta do: servidor que fez o pedido em FND ou do servidor que tem a chave em KEY */
+  memset(og_gate, 0, MAX);
   struct Program_connection tcp_sendkey;  /* cliente temporário para enviar info do FND */
 
   sscanf(received->buffer, "%s", token);
@@ -188,7 +188,6 @@ int take_a_decision(struct Program_connection* received, int response_fd, int pa
   servidor de chave i, endereço IP i.IP e porto i.port pretende entrar no anel,
   para que o predecessor estabeleça o servidor entrante como seu sucessor.*/
   else if(strcmp(token, "NEW") == 0){
-    fprintf(stderr, "aqui shit hole\n");
     if(sscanf(received->buffer, "%*s %d %s %s%c", &my_data->succ_key, my_data->succ_ip, my_data->succ_gate, &eol) == 4 && eol == '\n'){
       freeaddrinfo(received->res);
       close(response_fd);
@@ -230,10 +229,10 @@ int take_a_decision(struct Program_connection* received, int response_fd, int pa
       }
       else{
         tcp_sendkey = init_tcp_cl(og_ip, og_gate);
-        sprintf(msg, "KEY %d %d %s %s\n", key, my_data->key, my_data->succ_ip, my_data->succ_gate);
+        sprintf(msg, "KEY %d %d %s %s\n", key, my_data->succ_ key, my_data->succ_ip, my_data->succ_gate);
         tcp_sendkey.n = write(tcp_sendkey.fd, msg, MAX);
         if(tcp_sendkey.n == 1) /*error*/ exit(1);
-        fprintf(stderr, "-> Key found in my successor.\n");
+        fprintf(stdout, "-> Key found in my successor.\n");
       }
       return 0;
     }

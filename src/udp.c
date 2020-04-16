@@ -9,6 +9,28 @@
 
 #include "server.h"
 
+struct Program_connection init_udp_sv(char* gate){
+
+  struct Program_connection server;
+
+  server.fd = socket(AF_INET, SOCK_DGRAM, 0);
+  if (server.fd == -1) /**error*/ exit(1);
+
+  memset(&server.hints, 0, sizeof server.hints);
+  server.hints.ai_family = AF_INET;
+  server.hints.ai_socktype = SOCK_DGRAM;
+  server.hints.ai_flags = AI_PASSIVE;
+
+  server.errcode = getaddrinfo(NULL, gate, &server.hints, &server.res);
+  if (server.errcode != 0) /*error*/  exit(1);
+
+  server.n = bind(server.fd, server.res->ai_addr, server.res->ai_addrlen);
+  if(server.n == -1) /*error*/ exit(-1);
+
+  return server;
+}
+
+
 struct Program_connection init_udp_cl(char* ip, char* gate){
 
   struct Program_connection client;
@@ -22,21 +44,6 @@ struct Program_connection init_udp_cl(char* ip, char* gate){
 
   client.errcode = getaddrinfo(ip, gate, &client.hints, &client.res);
   if (client.errcode != 0) /*error*/  exit(1);
-
-  return client;
-}
-
-struct Program_connection request_udp_cl(struct Program_connection client, char* msg){
-
-  client.n = sendto(client.fd, msg, sizeof(msg), 0, client.res->ai_addr, client.res->ai_addrlen);
-  if (client.n==-1) /*error*/ exit(1);
-
-  client.addrlen = sizeof(client.addr);
-  client.n = recvfrom(client.fd, client.buffer, 128, 0, (struct sockaddr*) &client.addr, &client.addrlen);
-  if(client.n == -1) /*error*/ exit(-1);
-
-  write(1, "echo: ", 6);
-  write(1, client.buffer, client.n);
 
   return client;
 }
