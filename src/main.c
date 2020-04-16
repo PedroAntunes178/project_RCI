@@ -29,7 +29,7 @@ int main(int argc, char *argv[]){
 
   struct Program_connection udp_server = init_udp_sv(argv[2]);
   struct Program_connection tcp_server = init_tcp_sv(argv[2]);
-  struct Program_connection udp_client;
+//  struct Program_connection udp_client;
   struct Program_connection tcp_client;
   tcp_client.fd = -1;
   fd_set rfds;
@@ -214,7 +214,7 @@ int main(int argc, char *argv[]){
       /* FALTA ADICIONAR O ESTADO DO SERVIDOR!!! */
       else if(strcmp(buffer, "show\n") == 0){
         if(inside_a_ring)
-          fprintf(stdout, "Key: %d\n-> IP: %s\n-> PORT: %s\n-> SuccKey: %d\n-> SuccIP: %s\n-> SuccPORT: %s\n-> S_SuccKey: %d\n-> S_SuccIP: %s\n-> S_SuccPORT: %s\n", my_data.key, my_data.ip, my_data.gate, my_data.succ_key, my_data.succ_ip, my_data.succ_gate, my_data.s_succ_key, my_data.s_succ_ip, my_data.s_succ_gate);
+          fprintf(stdout, "-> Key: %d\n-> IP: %s\n-> PORT: %s\n-> SuccKey: %d\n-> SuccIP: %s\n-> SuccPORT: %s\n-> S_SuccKey: %d\n-> S_SuccIP: %s\n-> S_SuccPORT: %s\n", my_data.key, my_data.ip, my_data.gate, my_data.succ_key, my_data.succ_ip, my_data.succ_gate, my_data.s_succ_key, my_data.s_succ_ip, my_data.s_succ_gate);
         else fprintf(stdout, "Not inside a ring, so I don't have a successor.\n");
       }
 

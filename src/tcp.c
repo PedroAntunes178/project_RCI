@@ -73,9 +73,8 @@ int new_conection_to_me(int* afd, int newfd, struct Program_data my_data){
   copy_ip = malloc((MAX+1)*sizeof(char));
   char* copy_gate;
   copy_gate = malloc((MAX+1)*sizeof(char));
-
   if((n = read(newfd, buffer, 128)) != 0){
-    strcpy(my_data.buffer, buffer);//vamos ter de arranjar forma para confirmar que a msg que queremos ler está toda no buffer
+    strcpy(my_data.buffer, buffer); //vamos ter de arranjar forma para confirmar que a msg que queremos ler está toda no buffer
     if(n == -1) /*error*/ exit(1);
     sscanf(buffer, "%s", token);
 
@@ -111,6 +110,7 @@ int new_conection_to_me(int* afd, int newfd, struct Program_data my_data){
         return -1;
       }
     }
+
     /*KEY: Um servidor informa o servidor que iniciou a pesquisa da chave k que esta chave
     se encontra armazenada no seu sucessor succ com endereço IP succ.IP e porto
     succ.port. Esta mensagem é enviada sobre uma sessão TCP criada para o
@@ -133,22 +133,15 @@ int new_conection_to_me(int* afd, int newfd, struct Program_data my_data){
         return -1;
       }
     }
-    else{
-      sprintf(msg, "ERROR -> Something went wrong.\n");
-      n = write(newfd, msg, strlen(msg));
-      if (n==-1) /*error*/ exit(1);
-      free(buffer);
-      free(token);
-      free(msg);
-      free(copy_ip);
-      free(copy_gate);
-      return 1;
-    }
   }
   else{
-    fprintf(stderr, "Something went wrong with the new connecction.\n");
-    return -1;
+    sprintf(msg, "ERROR -> Something went wrong with the new connecction.\n");
+    fprintf(stderr, "%s\n", msg);
+    n = write(newfd, msg, strlen(msg));
+    if (n==-1) /*error*/ exit(1);
+    return 1;
   }
+  fprintf(stderr, "bazzoy\n");
   free(buffer);
   free(token);
   free(msg);
