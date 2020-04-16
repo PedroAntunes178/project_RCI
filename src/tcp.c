@@ -98,8 +98,6 @@ int new_conection_to_me(int afd, int new_conection_fd, struct Program_data my_da
         n = write(new_conection_fd, msg, strlen(msg));
         if (n==-1) /*error*/ exit(1);
       }
-      close(afd);
-      my_data.state_sv = 1;
       free(token);
       free(msg);
       free(copy_ip);
