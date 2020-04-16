@@ -66,6 +66,7 @@ int new_conection_to_me(int afd, int new_conection_fd, struct Program_data my_da
   char* msg;
   msg = (char*)malloc((MAX+1)*sizeof(char));
 
+  int find_key = 0;
   int copy_key;
   char* copy_ip;
   copy_ip = malloc((MAX+1)*sizeof(char));
@@ -115,11 +116,7 @@ int new_conection_to_me(int afd, int new_conection_fd, struct Program_data my_da
   efeito, do servidor que pretende enviar a mensagem para o servidor que iniciou a
   pesquisa.*/
   else if(strcmp(token, "KEY") == 0){
-    int find_key = 0;
-    int i =0;
-    i = sscanf(msg, "%*s %d %d %s %s%c", &find_key, &copy_key, copy_ip, copy_gate, &eol) == 5;
-    fprintf(stderr, "%d\n", i);
-    if(sscanf(msg, "%*s %d %d %s %s%c", &find_key, &copy_key, copy_ip, copy_gate, &eol) == 5 && eol == '\n'){
+    if(sscanf(buffer, "%*s %d %d %s %s%c", &find_key, &copy_key, copy_ip, copy_gate, &eol) == 5 && eol == '\n'){
       fprintf(stderr, "%d\n", find_key);
       fprintf(stderr, "%d\n", copy_key);
       fprintf(stderr, "%s\n", copy_ip);
