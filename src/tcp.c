@@ -147,10 +147,10 @@ int take_a_decision(struct Program_connection* received, int response_fd, int pa
   int og_key;     /* chave do: servidor que fez o pedido em FND ou do servidor que tem a chave em KEY*/
   int own_dist;   /* distância do próprio servidor à chave */
   int succ_dist;  /* distância do sucessor à chave */
-  char og_ip[MAX];    /* ip do: servidor que fez o pedido em FND ou do servidor que tem a chave em KEY */
-  memset(og_ip, 0, MAX);
-  char og_gate[MAX];  /* porta do: servidor que fez o pedido em FND ou do servidor que tem a chave em KEY */
-  memset(og_gate, 0, MAX);
+  char og_ip[20];    /* ip do: servidor que fez o pedido em FND ou do servidor que tem a chave em KEY */
+  memset(og_ip, 0, 20);
+  char og_gate[20];  /* porta do: servidor que fez o pedido em FND ou do servidor que tem a chave em KEY */
+  memset(og_gate, 0, 20);
   struct Program_connection tcp_sendkey;  /* cliente temporário para enviar info do FND */
 
   sscanf(received->buffer, "%s", token);
@@ -229,7 +229,7 @@ int take_a_decision(struct Program_connection* received, int response_fd, int pa
       }
       else{
         tcp_sendkey = init_tcp_cl(og_ip, og_gate);
-        sprintf(msg, "KEY %d %d %s %s\n", key, my_data->succ_ key, my_data->succ_ip, my_data->succ_gate);
+        sprintf(msg, "KEY %d %d %s %s\n", key, my_data->succ_key, my_data->succ_ip, my_data->succ_gate);
         tcp_sendkey.n = write(tcp_sendkey.fd, msg, MAX);
         if(tcp_sendkey.n == 1) /*error*/ exit(1);
         fprintf(stdout, "-> Key found in my successor.\n");
