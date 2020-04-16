@@ -17,6 +17,7 @@ struct Program_data{
   int state_cl;
   int state_sv;
   int state_new_conection;
+  int asked_for_entry;
 };
 
 struct Program_connection {
@@ -45,7 +46,7 @@ int take_a_decision(struct Program_connection*, int, int, struct Program_data*);
 
 int max(int, int);
 struct Program_data init_program_data();
-int free_program_data(struct Program_data);
+int free_program_data(struct Program_data*);
 int leave(struct Program_connection, int, struct Program_data*);
 int sentry(struct Program_data*, struct Program_connection*, char*);
 

@@ -307,7 +307,7 @@ int main(int argc, char *argv[]){
       /*EXIT: exits the application successfully*/
       else if(strcmp(buffer, "exit\n") == 0){
         if(inside_a_ring) leave(tcp_client, afd, &my_data);
-        free_program_data(my_data);
+        free_program_data(&my_data);
         fprintf(stderr, "\nExiting the application...\n");
         exit(EXIT_SUCCESS);
       }
@@ -338,17 +338,13 @@ struct Program_data init_program_data(){
   return init_data;
 }
 
-int free_program_data(struct Program_data free_data){
-  if(free_data.s_succ_ip != free_data.ip || free_data.s_succ_gate != free_data.gate{
-    free(free_data.s_succ_ip);
-    free(free_data.s_succ_gate);
-  }
-  if(free_data.succ_ip != free_data.ip || free_data.succ_gate != free_data.gate{
-    free(free_data.succ_ip);
-    free(free_data.succ_gate);
-  }
-  free(free_data.ip);
-  free(free_data.gate);
+int free_program_data(struct Program_data* free_data){
+  free(free_data->s_succ_ip);
+  free(free_data->s_succ_gate);
+  free(free_data->succ_ip);
+  free(free_data->succ_gate);
+  free(free_data->ip);
+  free(free_data->gate);
   return 0;
 }
 
