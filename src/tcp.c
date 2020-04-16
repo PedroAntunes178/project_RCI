@@ -61,16 +61,16 @@ int new_conection_to_me(int afd, int new_conection_fd, struct Program_data my_da
   int n;
   char eol = 0;
   char* token;
-  token = (char*)malloc((MAX+1)*sizeof(char));
+  token = calloc(MAX, sizeof(char));
   char* msg;
-  msg = (char*)malloc((MAX+1)*sizeof(char));
+  msg = calloc(MAX, sizeof(char));
 
   int find_key = 0;
   int copy_key;
   char* copy_ip;
-  copy_ip = malloc((MAX+1)*sizeof(char));
+  copy_ip = calloc(MAX, sizeof(char));
   char* copy_gate;
-  copy_gate = malloc((MAX+1)*sizeof(char));
+  copy_gate = calloc(MAX, sizeof(char));
 
   //vamos ter de arranjar forma para confirmar que a msg que queremos ler está toda no buffer
   strcpy(my_data.buffer, buffer);

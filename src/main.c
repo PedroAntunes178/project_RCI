@@ -331,7 +331,7 @@ struct Program_data init_program_data(){
   init_data.succ_ip = calloc(MAX, sizeof(char));
   init_data.succ_gate = calloc(MAX, sizeof(char));
   init_data.s_succ_ip = calloc(MAX, sizeof(char));
-  init_data.s_succ_gate = calloc(MAX sizeof(char));
+  init_data.s_succ_gate = calloc(MAX, sizeof(char));
   init_data.state_cl=0;
   init_data.state_sv=0;
   init_data.state_new_conection=0;
@@ -339,12 +339,16 @@ struct Program_data init_program_data(){
 }
 
 int free_program_data(struct Program_data free_data){
+  if(free_data.s_succ_ip != free_data.ip || free_data.s_succ_gate != free_data.gate){
+    free(free_data.s_succ_ip);
+    free(free_data.s_succ_gate);
+  }
+  if(free_data.succ_ip != free_data.ip || free_data.succ_gate != free_data.gate){
+    free(free_data.succ_ip);
+    free(free_data.succ_gate);
+  }
   free(free_data.ip);
   free(free_data.gate);
-  free(free_data.succ_ip);
-  free(free_data.succ_gate);
-  free(free_data.s_succ_ip);
-  free(free_data.s_succ_gate);
   return 0;
 }
 
