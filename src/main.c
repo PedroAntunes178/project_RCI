@@ -326,12 +326,12 @@ int max(int x, int y){
 
 struct Program_data init_program_data(){
   struct Program_data init_data;
-  init_data.ip = malloc((MAX+1)*sizeof(char));
-  init_data.gate = malloc((MAX+1)*sizeof(char));
-  init_data.succ_ip = malloc((MAX+1)*sizeof(char));
-  init_data.succ_gate = malloc((MAX+1)*sizeof(char));
-  init_data.s_succ_ip = malloc((MAX+1)*sizeof(char));
-  init_data.s_succ_gate = malloc((MAX+1)*sizeof(char));
+  init_data.ip = calloc(MAX, sizeof(char));
+  init_data.gate = calloc(MAX, sizeof(char));
+  init_data.succ_ip = calloc(MAX, sizeof(char));
+  init_data.succ_gate = calloc(MAX, sizeof(char));
+  init_data.s_succ_ip = calloc(MAX, sizeof(char));
+  init_data.s_succ_gate = calloc(MAX sizeof(char));
   init_data.state_cl=0;
   init_data.state_sv=0;
   init_data.state_new_conection=0;
@@ -365,7 +365,7 @@ int sentry(struct Program_data* my_data, struct Program_connection* tcp_client, 
 
   *tcp_client = init_tcp_cl(my_data->succ_ip, my_data->succ_gate);
   my_data->state_cl = 1;
-
+  memset(msg, 0, MAX);
   sprintf(msg, "NEW %d %s %s\n", my_data->key, my_data->ip, my_data->gate);
   tcp_client->n = write(tcp_client->fd, msg, MAX);
   if(tcp_client->n == -1) /*error*/ exit(1);
