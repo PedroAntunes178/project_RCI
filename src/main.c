@@ -339,11 +339,19 @@ struct Program_data init_program_data(){
 }
 
 int free_program_data(struct Program_data free_data){
+<<<<<<< HEAD
   if(free_data.s_succ_ip != free_data.ip || free_data.s_succ_gate != free_data.gate){
     free(free_data.s_succ_ip);
     free(free_data.s_succ_gate);
   }
   if(free_data.succ_ip != free_data.ip || free_data.succ_gate != free_data.gate){
+=======
+  if(free_data.s_succ_ip != free_data.ip && free_data.s_succ_gate != free(free_data.gate){
+    free(free_data.s_succ_ip);
+    free(free_data.s_succ_gate);
+  }
+  if(free_data.succ_ip != free_data.ip && free_data.succ_gate != free(free_data.gate){
+>>>>>>> 92d5dcc28b1627b06fe508675cf7fd81f89de682
     free(free_data.succ_ip);
     free(free_data.succ_gate);
   }
