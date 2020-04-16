@@ -132,7 +132,6 @@ int new_conection_to_me(int afd, int new_conection_fd, struct Program_data my_da
       fprintf(stderr, "ERROR -> The command \\KEY is of type \"KEY k succ succ.IP succ.port\\n\".\n");
     }
   }
-  fprintf(stderr, "bazzoy\n");
   free(token);
   free(msg);
   free(copy_ip);
