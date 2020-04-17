@@ -140,6 +140,12 @@ int main(int argc, char *argv[]){
           }
         }
       }
+      else{
+        fprintf(stderr, "Closing UDP Client connection.\n");
+        freeaddrinfo(udp_client.res);
+        close(udp_client.fd);
+        state_udp_cl = 0;
+      }
     }
 
 
@@ -183,26 +189,6 @@ int main(int argc, char *argv[]){
     }
 
 
-    /* WAITING TO READ AS NEW TCP SERVER*/
-    if(FD_ISSET(new_conection_fd, &rfds)){
-      //printf("Entrou!!\n");
-      memset(buffer, 0, MAX);
-      if((tcp_server.n = read(new_conection_fd, buffer, 128)) != 0){
-        if(tcp_server.n == -1) /*error*/ exit(1);
-        afd = new_conection_to_me(afd, new_conection_fd, buffer, my_data, udp_server);
-        my_data.asked_for_entry = 0;
-        new_conection_fd = -1;
-        my_data.state_new_conection = 0;
-        fprintf(stdout, "New connection processed successfully.\n");
-      }
-      else{
-        fprintf(stderr, "Connection lost with new_conection.\n");
-        close(new_conection_fd);
-        my_data.state_new_conection = 0;
-      }
-    }
-
-
     /* WAITING TO READ AS TCP CLIENT */
     if(FD_ISSET(tcp_client.fd, &rfds)){
       memset(tcp_client.buffer, 0, MAX);
@@ -230,6 +216,25 @@ int main(int argc, char *argv[]){
       }
     }
 
+
+    /* WAITING TO READ AS NEW TCP SERVER*/
+    if(FD_ISSET(new_conection_fd, &rfds)){
+      //printf("Entrou!!\n");
+      memset(buffer, 0, MAX);
+      if((tcp_server.n = read(new_conection_fd, buffer, 128)) != 0){
+        if(tcp_server.n == -1) /*error*/ exit(1);
+        afd = new_conection_to_me(afd, new_conection_fd, buffer, my_data, udp_server);
+        my_data.asked_for_entry = 0;
+        new_conection_fd = -1;
+        my_data.state_new_conection = 0;
+        fprintf(stdout, "New connection processed successfully.\n");
+      }
+      else{
+        fprintf(stderr, "Connection lost with new_conection.\n");
+        close(new_conection_fd);
+        my_data.state_new_conection = 0;
+      }
+    }
 
     /**************************
     READING INPUT FROM KEYBOARD
