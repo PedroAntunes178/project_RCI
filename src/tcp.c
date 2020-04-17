@@ -121,6 +121,12 @@ int new_conection_to_me(int afd, int new_conection_fd, struct Program_data my_da
       fprintf(stderr, "%s\n", copy_ip);
       fprintf(stderr, "%s\n", copy_gate);
       close(new_conection_fd);
+      if(my_data.asked_for_entry){
+        memset(msg, 0, MAX);
+        sprintf(msg, "EKEY %d %d %s %s\n", find_key, copy_key, copy_ip, copy_gate,);
+        udp_server.n = sendto(udp_server.fd, msg, strlen(msg), 0, (struct sockaddr*) &udp_server.addr, udp_server.addrlen);
+        if (udp_server.n==-1) exit(1);
+      }
     }
     else{
       fprintf(stderr, "ERROR -> The command \\KEY is of type \"KEY k succ succ.IP succ.port\\n\".\n");
