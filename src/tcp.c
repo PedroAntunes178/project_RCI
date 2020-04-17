@@ -56,7 +56,7 @@ struct Program_connection init_tcp_cl(char* ip, char* gate){
   return(client);
 }
 
-int new_conection_to_me(int afd, int new_conection_fd, struct Program_data my_data, char* buffer){
+int new_conection_to_me(int afd, int new_conection_fd, char* buffer, struct Program_data my_data, struct Program_connection udp_server){
 
   int n;
   char eol = 0;
@@ -123,9 +123,9 @@ int new_conection_to_me(int afd, int new_conection_fd, struct Program_data my_da
       close(new_conection_fd);
       if(my_data.asked_for_entry){
         memset(msg, 0, MAX);
-        sprintf(msg, "EKEY %d %d %s %s\n", find_key, copy_key, copy_ip, copy_gate,);
-        udp_server.n = sendto(udp_server.fd, msg, strlen(msg), 0, (struct sockaddr*) &udp_server.addr, udp_server.addrlen);
-        if (udp_server.n==-1) exit(1);
+        sprintf(msg, "EKEY %d %d %s %s\n", find_key, copy_key, copy_ip, copy_gate);
+        n = sendto(udp_server.fd, msg, strlen(msg), 0, (struct sockaddr*) &udp_server.addr, udp_server.addrlen);
+        if (n==-1) exit(1);
       }
     }
     else{

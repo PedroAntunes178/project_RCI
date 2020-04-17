@@ -17,8 +17,8 @@
 int main(int argc, char *argv[]){
 
   if(argc != 3){
-    exit(1);
     fprintf(stderr, "Por favor chamar o programa tipo ./dkt <ip> <porto>\n");
+    exit(1);
   }
 
   struct Program_data my_data;
@@ -84,6 +84,7 @@ int main(int argc, char *argv[]){
     if(counter <= 0) /*error*/
       exit(1);
 
+    /* WAITING TO READ AS UDP SERVER */
     if(FD_ISSET(udp_server.fd, &rfds)){
       memset(udp_server.buffer, 0, MAX);
       udp_server.addrlen = sizeof(udp_server.addr);
@@ -93,16 +94,43 @@ int main(int argc, char *argv[]){
         fprintf(stderr, "Received data in udp_server: %s", udp_server.buffer);
         /*EFND: Um servidor solicita a si qual a posição que lhe corresponde de acordo com a chave*/
         if(strcmp(token, "EFND") == 0){
-          /*entry_ask = 1;*/
           if(sscanf(udp_server.buffer, "%*s %d%c", &key_to_find, &eol) == 2 && eol == '\n'){
-            fprintf(stdout, "EXECUTAR O FIND!\nE manda EKEY ao cliente udp.\n");
+            my_data.asked_for_entry = 1;
+            fprintf(stdout, "Executing find in the ring!\nAnd the sending EKEY to the origin.\n");
             memset(msg, 0, MAX);
-            sprintf(msg, "EKEY %d %d 127.0.0.1 58000\n", key_to_find, key_to_find);
-            printf("\nmessage size %ld\n", strlen(msg));
-            udp_server.n = sendto(udp_server.fd, msg, strlen(msg), 0, (struct sockaddr*) &udp_server.addr, udp_server.addrlen);
-            if (udp_server.n==-1) /*error*/ exit(1);
+            sprintf(msg, "FND %d %d %s %s\n", key_to_find, my_data.key, my_data.ip, my_data.gate);
+            tcp_client.n = write(tcp_client.fd, msg, MAX);
+            if(tcp_client.n == -1)  exit(1);
+
           }
         }
+      }
+    }
+
+    /* WAITING TO READ AS UDP CLIENT */
+    if(FD_ISSET(udp_client.fd, &rfds)){
+      memset(udp_client.buffer, 0, MAX);
+      udp_client.addrlen = sizeof(udp_client.addr);
+      if((udp_client.n = recvfrom(udp_client.fd, udp_client.buffer, 128, 0, (struct sockaddr*) &udp_client.addr, &udp_client.addrlen)) != 0){
+        if(udp_client.n == -1) /*error*/ exit(1);
+        fprintf(stdout, "Received message as client: %s\n", udp_client.buffer);
+        sscanf(udp_client.buffer, "%s", token);
+        /*EKEY: O servidor recebe uma resposta com a sua posição no anel. */
+        if(strcmp(token, "EKEY") == 0){
+          if(sscanf(udp_client.buffer, "%*s %d %d %s %s%c", &my_data.key, &my_data.succ_key, my_data.succ_ip, my_data.succ_gate, &eol) == 5 && eol == '\n'){
+            fprintf(stderr, "Executing sentry after receiving my successor!\n");
+            if(sentry(&my_data, &tcp_client, msg) == 0 ){
+            inside_a_ring = 1;
+            }
+            else fprintf(stdout, "I can't have the same key as my sucessor.\n");
+          }
+        }
+      }
+      else{
+        fprintf(stderr, "Closed UDP Client connection.\n");
+        freeaddrinfo(udp_client.res);
+        close(udp_client.fd);
+        state_udp_cl = 0;
       }
     }
 
@@ -127,28 +155,6 @@ int main(int argc, char *argv[]){
       }
     }
 
-    /* WAITING TO READ AS UDP CLIENT */
-    if(FD_ISSET(udp_client.fd, &rfds)){
-      memset(udp_client.buffer, 0, MAX);
-      udp_client.addrlen = sizeof(udp_client.addr);
-      if((udp_client.n = recvfrom(udp_client.fd, udp_client.buffer, 128, 0, (struct sockaddr*) &udp_client.addr, &udp_client.addrlen)) != 0){
-        if(udp_client.n == -1) /*error*/ exit(1);
-        fprintf(stdout, "Received message as client: %s\n", udp_client.buffer);
-        sscanf(udp_client.buffer, "%s", token);
-        /*EKEY: O servidor recebe uma resposta com a sua posição no anel. */
-        if(strcmp(token, "EKEY") == 0){
-          if(sscanf(udp_client.buffer, "%*s %d %d %s %s%c", &my_data.key, &my_data.succ_key, my_data.succ_ip, my_data.succ_gate, &eol) == 5 && eol == '\n'){
-            fprintf(stderr, "EXECUTAR O SENTRY!\n");
-          }
-        }
-      }
-      else{
-        fprintf(stderr, "Closed UDP Client connection.\n");
-        freeaddrinfo(udp_client.res);
-        close(udp_client.fd);
-        state_udp_cl = 0;
-      }
-    }
 
     /* WAITING TO READ AS TCP SERVER*/
     if(FD_ISSET(afd, &rfds)){
@@ -174,7 +180,8 @@ int main(int argc, char *argv[]){
       memset(buffer, 0, MAX);
       if((tcp_server.n = read(new_conection_fd, buffer, 128)) != 0){
         if(tcp_server.n == -1) /*error*/ exit(1);
-        afd = new_conection_to_me(afd, new_conection_fd, my_data, buffer);
+        afd = new_conection_to_me(afd, new_conection_fd, buffer, my_data, udp_server);
+        my_data.asked_for_entry = 0;
         new_conection_fd = -1;
         my_data.state_new_conection = 0;
         fprintf(stdout, "New connection processed successfully.\n");
