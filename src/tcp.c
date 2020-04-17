@@ -17,6 +17,8 @@ struct Program_connection init_tcp_sv(char* gate){
 
   struct Program_connection server;
 
+  memset(server.buffer, 0, MAX);
+  
   server.fd = socket(AF_INET, SOCK_STREAM, 0); //TCP socket
   if (server.fd == -1) /**error*/ exit(1);
 
@@ -39,6 +41,8 @@ struct Program_connection init_tcp_sv(char* gate){
 struct Program_connection init_tcp_cl(char* ip, char* gate){
 
   struct Program_connection client;
+
+  memset(client.buffer, 0, MAX);
 
   client.fd = socket(AF_INET, SOCK_STREAM, 0); //TCP socket
   if(client.fd == -1) /*error*/ exit(1);

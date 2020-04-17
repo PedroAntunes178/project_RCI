@@ -40,17 +40,17 @@ int main(int argc, char *argv[]){
 
   int find_key;
 
-  int entry_sv_key = 0;			/*chave do servidor ao qual se solicita a entrada no anel*/
-  char entry_sv_ip[MIN];		/*ip do servidor ao qual se solicita a entrada no anel*/
-  char entry_sv_gate[MIN];	/*porto do servidor ao qual se solicita a entrada no anel*/
-  int state_udp_cl = 0;
-  int key_to_find = 0;
+  int entry_sv_key = 0;			/* chave do servidor ao qual se solicita a entrada no anel */
+  char entry_sv_ip[MIN];		/* ip do servidor ao qual se solicita a entrada no anel */
+  char entry_sv_gate[MIN];	/* porto do servidor ao qual se solicita a entrada no anel */
+  int state_udp_cl = 0;     /* estado do servidor como cliente udp */
+  int key_to_find = 0;      /* key que ser quer encontrar através de FND */
 
-  char buffer[MAX];
-  char token[MAX];
-  char msg[MAX];
-  char eol = 0;
-  int inside_a_ring = 0;
+  char buffer[MAX];         /* usado como buffer */
+  char token[MAX];          /* usado como token */
+  char msg[MAX];            /* usado para enviar comandos entre servidores */
+  char eol = 0;             /* usado para encontrar o '\n' das comunicações */
+  int inside_a_ring = 0;    /* flag de estado do servidor no anel */
 
 
   struct timeval _timeval;
@@ -66,23 +66,19 @@ int main(int argc, char *argv[]){
     /*
     A sequência de ifs que se seguem servem para não inicializar os file descriptors sem eles serem necessários.
     */
-    if(state_udp_cl){
-      //fprintf(stderr, "fd_set udp_cl: %d\n", udp_client.fd);
+    if(state_udp_cl){                             /* FD_SET - programa como cliente udp */
       FD_SET(udp_client.fd, &rfds);
       maxfd = max(maxfd, udp_client.fd) + 1;
     }
-    if(my_data.state_new_conection){
-      //fprintf(stderr, "fd_set new_conection: %d\n", new_conection_fd);
+    if(my_data.state_new_conection){              /* FD_SET - nova conecção de servidor */
       FD_SET(new_conection_fd, &rfds);
       maxfd = max(maxfd, new_conection_fd) + 1;
     }
-    if(my_data.state_sv){
-      //fprintf(stderr, "fd_set sv: %d\n", afd);
+    if(my_data.state_sv){                         /* FD_SET - programa como servidor tcp */
       FD_SET(afd, &rfds);
       maxfd = max(maxfd, afd) + 1;
     }
-    if(my_data.state_cl){
-      //fprintf(stderr, "fd_set cl: %d\n", tcp_client.fd);
+    if(my_data.state_cl){                         /* FD_SET - programa como cliente tcp */
       FD_SET(tcp_client.fd, &rfds);
       maxfd = max(maxfd, tcp_client.fd) + 1;
     }
@@ -102,7 +98,7 @@ int main(int argc, char *argv[]){
     else if(counter < 0) /*error*/
       exit(1);
 
-    /* WAITING TO READ AS UDP SERVER */
+    /* Leitura de dados como servidor UDP */
     if(FD_ISSET(udp_server.fd, &rfds)){
       memset(udp_server.buffer, 0, MAX);
       udp_server.addrlen = sizeof(udp_server.addr);
@@ -110,7 +106,7 @@ int main(int argc, char *argv[]){
         if (udp_server.n==-1) /*error*/ exit(1);
         sscanf(udp_server.buffer, "%s", token);
         fprintf(stderr, "Received data in udp_server: %s", udp_server.buffer);
-        /*EFND: Um servidor solicita a si qual a posição que lhe corresponde de acordo com a chave*/
+        /* EFND: Um servidor solicita a si qual a posição que lhe corresponde de acordo com a chave */
         if(strcmp(token, "EFND") == 0){
           if(sscanf(udp_server.buffer, "%*s %d%c", &key_to_find, &eol) == 2 && eol == '\n'){
             my_data.asked_for_entry = 1;
@@ -126,7 +122,7 @@ int main(int argc, char *argv[]){
     }
 
 
-    /* WAITING TO READ AS UDP CLIENT */
+    /* Leitura de dados como cliente UDP */
     if(FD_ISSET(udp_client.fd, &rfds)){
       memset(udp_client.buffer, 0, MAX);
       udp_client.addrlen = sizeof(udp_client.addr);
@@ -159,7 +155,7 @@ int main(int argc, char *argv[]){
     }
 
 
-    /* WAITING FOR CONNECTING AS TCP SERVER*/
+    /* Nova conecção como servidor TCP */
     if(FD_ISSET(tcp_server.fd, &rfds)){
       tcp_server.addrlen = sizeof(tcp_server.addr);
       if((newfd = accept(tcp_server.fd, (struct sockaddr*) &tcp_server.addr,
@@ -181,24 +177,13 @@ int main(int argc, char *argv[]){
     }
 
 
-    /* WAITING TO READ AS TCP SERVER*/
+    /* Leitura de dados como servidor TCP */
     if(FD_ISSET(afd, &rfds)){
-      //printf("Entrou?!\n");
-      //O codigo está stuck no read devia estar a ler new
-      memset(buffer, 0, MAX);
-      if((tcp_server.n = read(afd, buffer, 128)) != 0){
+      memset(tcp_server.buffer, 0, MAX);
+      if((tcp_server.n = read(afd, tcp_server.buffer, 128)) != 0){
         if(tcp_server.n == -1) /*error*/ exit(1);
-        fprintf(stdout, "Received: %s", buffer);
-        strcat(tcp_server.buffer, buffer);
-        if(sscanf(tcp_server.buffer, "%*[^\n]s%c", &eol) == 1 && eol == '\n'){
-          take_a_decision(&tcp_server, afd, tcp_client.fd, &my_data);
-          /*memset(buffer, 0, MAX);
-          if(sscanf(tcp_server.buffer, "%*[^\n]s%*c%[^\0]s", buffer) == 1 && eol == '\n'){
-            memset(tcp_server.buffer, 0, MAX);
-            strcat(tcp_server.buffer, buffer);
-          }
-          else*/ memset(tcp_server.buffer, 0, MAX);
-        }
+        fprintf(stdout, "Received: %s", tcp_server.buffer);
+        take_a_decision(&tcp_server, afd, tcp_client.fd, &my_data);
       }
       else{
         fprintf(stderr, "\nConnection lost with predecessor.\n");
@@ -209,13 +194,12 @@ int main(int argc, char *argv[]){
     }
 
 
-    /* WAITING TO READ AS TCP CLIENT */
+    /* Leitura de dados como cliente TCP */
     if(FD_ISSET(tcp_client.fd, &rfds)){
-      memset(buffer, 0, MAX);
-      if((tcp_client.n = read(tcp_client.fd, buffer, 128)) != 0){
-        strcat(tcp_client.buffer, buffer);
+      memset(tcp_client.buffer, 0, MAX);
+      if((tcp_client.n = read(tcp_client.fd, tcp_client.buffer, 128)) != 0){
         if(tcp_client.n == -1) /*error*/ exit(1);
-        fprintf(stdout, "echo: %s", tcp_client.buffer);
+        fprintf(stdout, "echo: %s", buffer);
         take_a_decision(&tcp_client, tcp_client.fd, afd, &my_data);
       }
       else{
@@ -241,17 +225,15 @@ int main(int argc, char *argv[]){
     }
 
 
-    /* WAITING TO READ AS NEW TCP SERVER*/
+    /* Leitura de dados como novo servidor TCP */
     if(FD_ISSET(new_conection_fd, &rfds)){
-      //printf("Entrou!!\n");
-      memset(buffer, 0, MAX);
-      if((tcp_server.n = read(new_conection_fd, buffer, 128)) != 0){
-        strcat(new_conection_buffer, buffer);
+      memset(new_conection_buffer, 0, MAX);
+      if((tcp_server.n = read(new_conection_fd, new_conection_buffer, 128)) != 0){
         if(tcp_server.n == -1) /*error*/ exit(1);
-        afd = new_conection_to_me(afd, new_conection_fd, buffer, my_data, udp_server);
+        afd = new_conection_to_me(afd, new_conection_fd, new_conection_buffer, my_data, udp_server);
         my_data.asked_for_entry = 0;
-        new_conection_fd = -1;
         my_data.state_new_conection = 0;
+        new_conection_fd = -1;
         fprintf(stderr, "New connection processed successfully.\n");
       }
       else{
@@ -262,14 +244,14 @@ int main(int argc, char *argv[]){
       }
     }
 
-    /**************************
-    READING INPUT FROM KEYBOARD
-    **************************/
+    /*
+    * Leitura do input pelo teclado
+    */
     if(FD_ISSET(0, &rfds)){
       fgets(buffer, MAX, stdin);
       sscanf(buffer, "%s", token);
 
-      /*NEW: creating the first server*/
+      /* NEW: criação do primeiro servidor*/
       if(strcmp(token, "new") == 0 && inside_a_ring == 0){
         if(sscanf(buffer, "%*s %d%c", &my_data.key, &eol) == 2 && eol == '\n'){
           my_data.succ_key = my_data.key;
@@ -290,8 +272,7 @@ int main(int argc, char *argv[]){
         }
       }
 
-
-      /*ENTRY: adding a server in the ring without knowing it's location */
+      /* ENTRY: adição do servidor no anel sem saber a sua localização */
       else if(strcmp(token, "entry") == 0 && inside_a_ring == 0){
         if(sscanf(buffer, "%*s %d %d %s %s%c", &my_data.key, &entry_sv_key, entry_sv_ip, entry_sv_gate, &eol) == 5 && eol == '\n'){
           if (!(state_udp_cl)){
@@ -315,7 +296,7 @@ int main(int argc, char *argv[]){
         }
       }
 
-      /*SENTRY: adding a server specifying it's successor */
+      /* SENTRY: adição do servidor no anel, especificando o seu servidor sucessor */
       else if(strcmp(token, "sentry") == 0 && !(inside_a_ring)){
         if(sscanf(buffer, "%*s %d %d %s %s%c", &my_data.key, &my_data.succ_key, my_data.succ_ip, my_data.succ_gate, &eol) == 5 && eol == '\n'){
            if(sentry(&my_data, &tcp_client, msg) == 0 ){
@@ -330,20 +311,20 @@ int main(int argc, char *argv[]){
         }
       }
 
-      /*LEAVE: ... */
+      /* LEAVE: saída do servidor do anel */
       else if(strcmp(buffer, "leave\n") == 0 && inside_a_ring){
         leave(&tcp_client, &afd, &my_data);
         inside_a_ring = 0;
       }
 
-      /* FALTA ADICIONAR O ESTADO DO SERVIDOR!!! */
+      /* SHOW: prints do estado, chave e ligações do servidor */
       else if(strcmp(buffer, "show\n") == 0){
         if(inside_a_ring)
           fprintf(stdout, "-> Key: %d\n-> IP: %s\n-> PORT: %s\n-> SuccKey: %d\n-> SuccIP: %s\n-> SuccPORT: %s\n-> S_SuccKey: %d\n-> S_SuccIP: %s\n-> S_SuccPORT: %s\n", my_data.key, my_data.ip, my_data.gate, my_data.succ_key, my_data.succ_ip, my_data.succ_gate, my_data.s_succ_key, my_data.s_succ_ip, my_data.s_succ_gate);
         else fprintf(stdout, "Not inside a ring, so I don't have a successor.\n");
       }
 
-      /*FIND: ... */
+      /* FIND: procura do servidor que alberga uma determinada chave */
       else if(strcmp(token, "find") == 0){
           if(sscanf(buffer, "%*s %d%c", &find_key, &eol) == 2 && eol == '\n'){
             sprintf(msg, "FND %d %d %s %s\n", find_key, my_data.key, my_data.ip, my_data.gate);
@@ -357,7 +338,7 @@ int main(int argc, char *argv[]){
           }
       }
 
-      /*EXIT: exits the application successfully*/
+      /* EXIT: saída do programa */
       else if(strcmp(buffer, "exit\n") == 0){
         if(inside_a_ring) leave(&tcp_client, &afd, &my_data);
         free_program_data(my_data);
@@ -369,12 +350,15 @@ int main(int argc, char *argv[]){
         fprintf(stderr, "\nExiting the application...\n");
         exit(EXIT_SUCCESS);
       }
-      /*Invalid command, ignores it*/
       else fprintf(stderr, "ERROR -> Invalid command.\n");
     }
   }
 }
 
+/*
+** max( int , int )
+** -> retorna o maior de dois ints fornecidos.
+*/
 int max(int x, int y){
   if (x > y)
     return x;
@@ -382,6 +366,10 @@ int max(int x, int y){
     return y;
 }
 
+/*
+** init_program_data()
+** -> retorna uma estrutura com toda a informação de um servidor inicializada.
+*/
 struct Program_data init_program_data(){
   struct Program_data init_data;
   init_data.ip = calloc(MIN, sizeof(char));
@@ -397,6 +385,10 @@ struct Program_data init_program_data(){
   return init_data;
 }
 
+/*
+** free_program_data( struct Program_data )
+** -> liberta a memória alocada a toda a informação de um servidor.
+*/
 int free_program_data(struct Program_data free_data){
   free(free_data.s_succ_ip);
   free(free_data.s_succ_gate);
@@ -415,6 +407,10 @@ int free_program_data(struct Program_data free_data){
   return 0;
 }
 
+/*
+** leave( struct Program_connection* , int* , struct Program_data* )
+** -> fecha as ligações e conclui a saída de um servidor do anel.
+*/
 int leave(struct Program_connection* tcp_client, int* afd, struct Program_data* my_data){
   freeaddrinfo(tcp_client->res);
   close(tcp_client->fd);
@@ -428,6 +424,10 @@ int leave(struct Program_connection* tcp_client, int* afd, struct Program_data* 
   return 0;
 }
 
+/*
+** sentry( struct Program_data* , struct Program_connection* , char* )
+** -> implementa a funcionalidade do comando SENTRY.
+*/
 int sentry(struct Program_data* my_data, struct Program_connection* tcp_client, char* msg){
 
   if(my_data->key == my_data->succ_key) return 1;
