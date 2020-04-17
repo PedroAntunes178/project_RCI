@@ -35,6 +35,8 @@ int main(int argc, char *argv[]){
 	udp_client.fd = -1;
   fd_set rfds;
   int maxfd, counter, newfd, afd = -1, new_conection_fd = -1;
+  char* new_conection_buffer = calloc(MAX, sizeof(char));
+
 
   int find_key;
 
@@ -181,13 +183,22 @@ int main(int argc, char *argv[]){
 
     /* WAITING TO READ AS TCP SERVER*/
     if(FD_ISSET(afd, &rfds)){
-      printf("Entrou?!\n");
+      //printf("Entrou?!\n");
       //O codigo está stuck no read devia estar a ler new
-      memset(tcp_server.buffer, 0, MAX);
-      if((tcp_server.n = read(afd, tcp_server.buffer, 128)) != 0){
+      memset(buffer, 0, MAX);
+      if((tcp_server.n = read(afd, buffer, 128)) != 0){
         if(tcp_server.n == -1) /*error*/ exit(1);
-        fprintf(stdout, "Received: %s", tcp_server.buffer);
-        take_a_decision(&tcp_server, afd, tcp_client.fd, &my_data);
+        fprintf(stdout, "Received: %s", buffer);
+        strcat(tcp_server.buffer, buffer);
+        if(sscanf(tcp_server.buffer, "%*[^\n]s%c", &eol) == 1 && eol == '\n'){
+          take_a_decision(&tcp_server, afd, tcp_client.fd, &my_data);
+          /*memset(buffer, 0, MAX);
+          if(sscanf(tcp_server.buffer, "%*[^\n]s%*c%[^\0]s", buffer) == 1 && eol == '\n'){
+            memset(tcp_server.buffer, 0, MAX);
+            strcat(tcp_server.buffer, buffer);
+          }
+          else*/ memset(tcp_server.buffer, 0, MAX);
+        }
       }
       else{
         fprintf(stderr, "\nConnection lost with predecessor.\n");
@@ -200,8 +211,9 @@ int main(int argc, char *argv[]){
 
     /* WAITING TO READ AS TCP CLIENT */
     if(FD_ISSET(tcp_client.fd, &rfds)){
-      memset(tcp_client.buffer, 0, MAX);
-      if((tcp_client.n = read(tcp_client.fd, tcp_client.buffer, 128)) != 0){
+      memset(buffer, 0, MAX);
+      if((tcp_client.n = read(tcp_client.fd, buffer, 128)) != 0){
+        strcat(tcp_client.buffer, buffer);
         if(tcp_client.n == -1) /*error*/ exit(1);
         fprintf(stdout, "echo: %s", tcp_client.buffer);
         take_a_decision(&tcp_client, tcp_client.fd, afd, &my_data);
@@ -234,6 +246,7 @@ int main(int argc, char *argv[]){
       //printf("Entrou!!\n");
       memset(buffer, 0, MAX);
       if((tcp_server.n = read(new_conection_fd, buffer, 128)) != 0){
+        strcat(new_conection_buffer, buffer);
         if(tcp_server.n == -1) /*error*/ exit(1);
         afd = new_conection_to_me(afd, new_conection_fd, buffer, my_data, udp_server);
         my_data.asked_for_entry = 0;

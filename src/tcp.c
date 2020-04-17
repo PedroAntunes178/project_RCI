@@ -60,20 +60,15 @@ int new_conection_to_me(int afd, int new_conection_fd, char* buffer, struct Prog
 
   int n;
   char eol = 0;
-  char* token;
-  token = calloc(MAX, sizeof(char));
-  char* msg;
-  msg = calloc(MAX, sizeof(char));
+  char* token = calloc(MAX, sizeof(char));
+  char* msg = calloc(MAX, sizeof(char));
 
   int find_key = 0;
   int copy_key;
-  char* copy_ip;
-  copy_ip = calloc(MAX, sizeof(char));
-  char* copy_gate;
-  copy_gate = calloc(MAX, sizeof(char));
+  char* copy_ip = calloc(MAX, sizeof(char));
+  char* copy_gate = calloc(MAX, sizeof(char));
 
   //vamos ter de arranjar forma para confirmar que a msg que queremos ler está toda no buffer
-  strcpy(my_data.buffer, buffer);
   sscanf(buffer, "%s", token);
   fprintf(stderr, "New message received: %s", buffer);
 
@@ -84,7 +79,7 @@ int new_conection_to_me(int afd, int new_conection_fd, char* buffer, struct Prog
   para que o predecessor estabeleça o servidor entrante como seu sucessor.*/
   if(strcmp(token, "NEW") == 0){
     if(sscanf(buffer, "%*s %d %s %s%c", &copy_key, copy_ip, copy_gate, &eol) == 4 && eol == '\n'){
-      n = write(afd, my_data.buffer, strlen(my_data.buffer));
+      n = write(afd, buffer, strlen(buffer));
       if (n==-1) /*error*/ exit(1);
       if(my_data.key==my_data.succ_key){
         //significa que é o segundo a se juntar ao anel

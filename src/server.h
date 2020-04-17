@@ -15,7 +15,6 @@ struct Program_data{
   char* succ_gate;
   char* s_succ_ip;
   char* s_succ_gate;
-  char buffer[128];
   int state_cl;
   int state_sv;
   int state_new_conection;
