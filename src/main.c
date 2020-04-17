@@ -349,16 +349,21 @@ struct Program_data init_program_data(){
   init_data.state_cl=0;
   init_data.state_sv=0;
   init_data.state_new_conection=0;
+	init_data.asked_for_entry = 0;
   return init_data;
 }
 
 int free_program_data(struct Program_data* free_data){
   free(free_data->s_succ_ip);
   free(free_data->s_succ_gate);
-  free(free_data->succ_ip);
-  free(free_data->succ_gate);
-  free(free_data->ip);
-  free(free_data->gate);
+	if(free_data->succ_ip != free_data->s_succ_ip)
+  	free(free_data->succ_ip);
+	if(free_data->succ_gate != free_data->s_succ_gate)
+  	free(free_data->succ_gate);
+	if(free_data->ip != free_data->succ_ip && free_data->ip != free_data->s_succ_ip)
+  	free(free_data->ip);
+	if(free_data->gate != free_data->succ_gate && free_data->gate != free_data->s_succ_gate)
+  	free(free_data->gate);
   return 0;
 }
 

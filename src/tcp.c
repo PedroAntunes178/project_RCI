@@ -58,19 +58,23 @@ struct Program_connection init_tcp_cl(char* ip, char* gate){
 
 int new_conection_to_me(int afd, int new_conection_fd, char* buffer, struct Program_data my_data, struct Program_connection udp_server){
 
-  int n;
+  int n = 0;
   char eol = 0;
   char* token;
   token = calloc(MAX, sizeof(char));
+	memset(token, 0, MAX);
   char* msg;
   msg = calloc(MAX, sizeof(char));
+	memset(msg, 0, MAX);
 
   int find_key = 0;
-  int copy_key;
+  int copy_key = 0;
   char* copy_ip;
   copy_ip = calloc(MAX, sizeof(char));
+	memset(copy_ip, 0, MAX);
   char* copy_gate;
   copy_gate = calloc(MAX, sizeof(char));
+	memset(copy_gate, 0, MAX);
 
   //vamos ter de arranjar forma para confirmar que a msg que queremos ler está toda no buffer
   strcpy(my_data.buffer, buffer);
@@ -239,6 +243,8 @@ int take_a_decision(struct Program_connection* received, int response_fd, int pa
         tcp_sendkey.n = write(tcp_sendkey.fd, msg, MAX);
         if(tcp_sendkey.n == 1) /*error*/ exit(1);
         fprintf(stdout, "-> Key found in my successor.\n");
+		    freeaddrinfo(tcp_sendkey.res);
+		    close(tcp_sendkey.fd);
       }
       return 0;
     }
