@@ -243,6 +243,7 @@ int main(int argc, char *argv[]){
         strcat(new_conection_buffer, new_buffer);
         //if(sscanf(tcp_server.buffer, "%[^\n]s%c", &eol) == 1 && eol == '\n')
         afd = new_conection_to_me(afd, new_conection_fd, new_conection_buffer, my_data, udp_server);
+        memset(new_conection_buffer, 0, MAX);
         my_data.asked_for_entry = 0;
         my_data.state_new_conection = 0;
         new_conection_fd = -1;
