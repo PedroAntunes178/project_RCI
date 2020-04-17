@@ -240,6 +240,8 @@ int take_a_decision(struct Program_connection* received, int response_fd, int pa
         tcp_sendkey.n = write(tcp_sendkey.fd, msg, MAX);
         if(tcp_sendkey.n == 1) /*error*/ exit(1);
         fprintf(stdout, "-> Key found in my successor.\n");
+        freeaddrinfo(tcp_sendkey.res);
+        close(tcp_sendkey.fd);
       }
       return 0;
     }

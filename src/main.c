@@ -365,6 +365,7 @@ struct Program_data init_program_data(){
   init_data.state_cl=0;
   init_data.state_sv=0;
   init_data.state_new_conection=0;
+	init_data.asked_for_entry = 0;
   return init_data;
 }
 
