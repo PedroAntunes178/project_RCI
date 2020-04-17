@@ -80,6 +80,14 @@ int main(int argc, char *argv[]){
       FD_SET(tcp_client.fd, &rfds);
       maxfd = max(maxfd, tcp_client.fd) + 1;
     }
+    if(start < (time(NULL)-5)){
+      memset(msg, 0, MAX);
+      sprintf(msg,"EFND %d\n", my_data.key);
+      udp_client.n = sendto(udp_client.fd, msg, strlen(msg), 0, udp_client.res->ai_addr, udp_client.res->ai_addrlen);
+      if(udp_client.n == -1) /*error*/ exit(1);
+      fprintf(stderr, "-> Sent message as udp client: %s", msg);
+      start = time(NULL);
+    }
 
     counter = select(maxfd, &rfds, (fd_set*)NULL, (fd_set*)NULL, (struct timeval *)NULL);
 
@@ -245,20 +253,8 @@ int main(int argc, char *argv[]){
             fprintf(stderr, "-> Sent message as udp client: %s", msg);
             start = time(NULL);
           }
-          else if(start < (time(NULL)-5)){
-            memset(msg, 0, MAX);
-            sprintf(msg,"EFND %d\n", my_data.key);
-            udp_client.n = sendto(udp_client.fd, msg, strlen(msg), 0, udp_client.res->ai_addr, udp_client.res->ai_addrlen);
-            if(udp_client.n == -1) /*error*/ exit(1);
-            fprintf(stderr, "-> Sent message as udp client: %s", msg);
-            start = time(NULL);
-          }
           else{
-            fprintf(stderr, "CORREU um calhão de vezes...\n");
-            memset(msg, 0, MAX);
-            sprintf(msg, "entry %d %d %s %s\n", my_data.key, entry_sv_key, entry_sv_ip, entry_sv_gate);
-            udp_client.n = write(2, msg, MAX);
-            if(udp_client.n == -1) /*error*/ exit(1);
+            fprintf(stdout, "Already trying to connect.\n");
           }
       	}
 				else{
