@@ -9,9 +9,9 @@
 
 #include "server.h"
 
-struct Server init_udp_sv(char* gate){
+struct Program_connection init_udp_sv(char* gate){
 
-  struct Server server;
+  struct Program_connection server;
 
   server.fd = socket(AF_INET, SOCK_DGRAM, 0);
   if (server.fd == -1) /**error*/ exit(1);
@@ -30,22 +30,20 @@ struct Server init_udp_sv(char* gate){
   return server;
 }
 
-struct Server listen_udp_sv(struct Server server){
 
-  server.addrlen = sizeof(server.addr);
+struct Program_connection init_udp_cl(char* ip, char* gate){
 
-  server.n = recvfrom(server.fd, server.buffer, 128, 0, (struct sockaddr*) &server.addr, &server.addrlen);
-  if (server.n==-1) /*error*/ exit(1);
-  write(1, "received: ", 9);
-  write(1, server.buffer, server.n);
+  struct Program_connection client;
 
-  server.n = sendto(server.fd, server.buffer, server.n, 0, (struct sockaddr*) &server.addr, server.addrlen);
-  if (server.n==-1) /*error*/ exit(1);
+  client.fd = socket(AF_INET, SOCK_DGRAM, 0);
+  if (client.fd == -1) /**error*/ exit(1);
 
-  return server;
-}
+  memset (&client.hints, 0, sizeof client.hints);
+  client.hints.ai_family = AF_INET;
+  client.hints.ai_socktype = SOCK_DGRAM;
 
-void close_udp_sv(struct Server server){
-  freeaddrinfo(server.res);
-  close(server.fd);
+  client.errcode = getaddrinfo(ip, gate, &client.hints, &client.res);
+  if (client.errcode != 0) /*error*/  exit(1);
+
+  return client;
 }
