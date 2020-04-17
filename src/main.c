@@ -371,10 +371,14 @@ struct Program_data init_program_data(){
 int free_program_data(struct Program_data* free_data){
   free(free_data->s_succ_ip);
   free(free_data->s_succ_gate);
-  free(free_data->succ_ip);
-  free(free_data->succ_gate);
-  free(free_data->ip);
-  free(free_data->gate);
+	if(free_data->succ_ip != free_data->s_succ_ip)
+  	free(free_data->succ_ip);
+	if(free_data->succ_gate != free_data->s_succ_gate)
+  	free(free_data->succ_gate);
+	if(free_data->ip != free_data->succ_ip && free_data->ip != free_data->s_succ_ip)
+  	free(free_data->ip);
+	if(free_data->gate != free_data->succ_gate && free_data->gate != free_data->s_succ_gate)
+  	free(free_data->gate);
   return 0;
 }
 
