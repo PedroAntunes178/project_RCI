@@ -76,6 +76,7 @@ struct Program_connection init_tcp_cl(char* ip, char* gate){
 */
 int new_conection_to_me(int afd, int new_conection_fd, char* buffer, struct Program_data my_data, struct Program_connection udp_server){
 
+
   int n;
   char eol = 0;
   char* token = calloc(MAX, sizeof(char));
@@ -87,6 +88,13 @@ int new_conection_to_me(int afd, int new_conection_fd, char* buffer, struct Prog
   char* copy_gate = calloc(MAX, sizeof(char));
 
   //vamos ter de arranjar forma para confirmar que a msg que queremos ler está toda no buffer
+  sscanf(buffer, "%s", token);
+  fprintf(stderr, "New message received: %s", buffer);
+
+  copy_gate = malloc((MAX+1)*sizeof(char));
+
+  //vamos ter de arranjar forma para confirmar que a msg que queremos ler está toda no buffer
+  strcpy(my_data.buffer, buffer);
   sscanf(buffer, "%s", token);
   fprintf(stderr, "New message received: %s", buffer);
 

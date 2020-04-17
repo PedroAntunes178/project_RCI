@@ -86,6 +86,11 @@ int main(int argc, char *argv[]){
       FD_SET(tcp_client.fd, &rfds);
       maxfd = max(maxfd, tcp_client.fd) + 1;
     }
+		if(state_udp_cl){
+			fprintf(stderr, "fd_set udp_cl: %d\n", udp_client.fd);
+			FD_SET(udp_client.fd, &rfds);
+			maxfd = max(maxfd, udp_client.fd) + 1;
+		}
 
 
     /* seleção do código a executar de acordo com o FD_SET */
