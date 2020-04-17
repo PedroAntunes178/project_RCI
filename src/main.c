@@ -39,8 +39,8 @@ int main(int argc, char *argv[]){
   int find_key;
 
   int entry_sv_key = 0;			/*chave do servidor ao qual se solicita a entrada no anel*/
-  char entry_sv_ip[MAX];		/*ip do servidor ao qual se solicita a entrada no anel*/
-  char entry_sv_gate[MAX];	/*porto do servidor ao qual se solicita a entrada no anel*/
+  char entry_sv_ip[MIN];		/*ip do servidor ao qual se solicita a entrada no anel*/
+  char entry_sv_gate[MIN];	/*porto do servidor ao qual se solicita a entrada no anel*/
   int state_udp_cl = 0;
   int key_to_find = 0;
 
@@ -49,6 +49,11 @@ int main(int argc, char *argv[]){
   char msg[MAX];
   char eol = 0;
   int inside_a_ring = 0;
+
+
+  struct timeval _timeval;
+  _timeval.tv_usec = 500;
+  _timeval.tv_sec = 5;
 
   while(1){
     FD_ZERO(&rfds);
@@ -80,6 +85,7 @@ int main(int argc, char *argv[]){
       maxfd = max(maxfd, tcp_client.fd) + 1;
     }
 
+<<<<<<< HEAD
     counter = select(maxfd, &rfds, (fd_set*)NULL, (fd_set*)NULL, (struct timeval *)NULL);
     if(counter == 0 && state_udp_cl){
       memset(msg, 0, MAX);
@@ -89,6 +95,18 @@ int main(int argc, char *argv[]){
       fprintf(stderr, "-> Sent message as udp client: %s", msg);
       _timeval.tv_sec = _timeval.tv_sec + 5;
 
+=======
+
+    counter = select(maxfd, &rfds, (fd_set*)NULL, (fd_set*)NULL, &_timeval);
+    if(counter == 0 && state_udp_cl){
+      memset(msg, 0, MAX);
+      sprintf(msg,"EFND %d\n", my_data.key);
+      udp_client.n = sendto(udp_client.fd, msg, strlen(msg), 0, udp_client.res->ai_addr, udp_client.res->ai_addrlen);
+      if(udp_client.n == -1) /*error*/ exit(1);
+      fprintf(stderr, "-> Sent message as udp client: %s", msg);
+      _timeval.tv_sec = _timeval.tv_sec + 5;
+
+>>>>>>> Workshop_do_pedro
     }
     else if(counter < 0) /*error*/
       exit(1);
@@ -116,6 +134,7 @@ int main(int argc, char *argv[]){
       }
     }
 
+
     /* WAITING TO READ AS UDP CLIENT */
     if(FD_ISSET(udp_client.fd, &rfds)){
       memset(udp_client.buffer, 0, MAX);
@@ -137,12 +156,13 @@ int main(int argc, char *argv[]){
         }
       }
       else{
-        fprintf(stderr, "Closed UDP Client connection.\n");
+        fprintf(stderr, "Closing UDP Client connection.\n");
         freeaddrinfo(udp_client.res);
         close(udp_client.fd);
         state_udp_cl = 0;
       }
     }
+
 
     /* WAITING FOR CONNECTING AS TCP SERVER*/
     if(FD_ISSET(tcp_server.fd, &rfds)){
@@ -184,26 +204,6 @@ int main(int argc, char *argv[]){
     }
 
 
-    /* WAITING TO READ AS NEW TCP SERVER*/
-    if(FD_ISSET(new_conection_fd, &rfds)){
-      //printf("Entrou!!\n");
-      memset(buffer, 0, MAX);
-      if((tcp_server.n = read(new_conection_fd, buffer, 128)) != 0){
-        if(tcp_server.n == -1) /*error*/ exit(1);
-        afd = new_conection_to_me(afd, new_conection_fd, buffer, my_data, udp_server);
-        my_data.asked_for_entry = 0;
-        new_conection_fd = -1;
-        my_data.state_new_conection = 0;
-        fprintf(stdout, "New connection processed successfully.\n");
-      }
-      else{
-        fprintf(stderr, "Connection lost with new_conection.\n");
-        close(new_conection_fd);
-        my_data.state_new_conection = 0;
-      }
-    }
-
-
     /* WAITING TO READ AS TCP CLIENT */
     if(FD_ISSET(tcp_client.fd, &rfds)){
       memset(tcp_client.buffer, 0, MAX);
@@ -231,6 +231,25 @@ int main(int argc, char *argv[]){
       }
     }
 
+
+    /* WAITING TO READ AS NEW TCP SERVER*/
+    if(FD_ISSET(new_conection_fd, &rfds)){
+      //printf("Entrou!!\n");
+      memset(buffer, 0, MAX);
+      if((tcp_server.n = read(new_conection_fd, buffer, 128)) != 0){
+        if(tcp_server.n == -1) /*error*/ exit(1);
+        afd = new_conection_to_me(afd, new_conection_fd, buffer, my_data, udp_server);
+        my_data.asked_for_entry = 0;
+        new_conection_fd = -1;
+        my_data.state_new_conection = 0;
+        fprintf(stdout, "New connection processed successfully.\n");
+      }
+      else{
+        fprintf(stderr, "Connection lost with new_conection.\n");
+        close(new_conection_fd);
+        my_data.state_new_conection = 0;
+      }
+    }
 
     /**************************
     READING INPUT FROM KEYBOARD
@@ -263,6 +282,7 @@ int main(int argc, char *argv[]){
       /*ENTRY: ... */
       else if(strcmp(token, "entry") == 0 && inside_a_ring == 0){
         if(sscanf(buffer, "%*s %d %d %s %s%c", &my_data.key, &entry_sv_key, entry_sv_ip, entry_sv_gate, &eol) == 5 && eol == '\n'){
+<<<<<<< HEAD
 					udp_client = init_udp_cl(entry_sv_ip, entry_sv_gate);
 					state_udp_cl = 1;
 					fprintf(stderr,"-> UDP connection done. %d\n", udp_client.fd);
@@ -271,11 +291,27 @@ int main(int argc, char *argv[]){
 				  udp_client.n = sendto(udp_client.fd, msg, strlen(msg), 0, udp_client.res->ai_addr, udp_client.res->ai_addrlen);
   				if(udp_client.n == -1) /*error*/ exit(1);
 					fprintf(stderr, "-> Sent message as udp client: %s", msg);
+=======
+          if (!(state_udp_cl)){
+            udp_client = init_udp_cl(entry_sv_ip, entry_sv_gate);
+            fprintf(stderr,"-> UDP connection done. %d\n", udp_client.fd);
+            state_udp_cl = 1;
+            memset(msg, 0, MAX);
+            sprintf(msg,"EFaND %d\n", my_data.key);
+            udp_client.n = sendto(udp_client.fd, msg, strlen(msg), 0, udp_client.res->ai_addr, udp_client.res->ai_addrlen);
+            if(udp_client.n == -1) /*error*/ exit(1);
+            fprintf(stderr, "-> Sent message as udp client: %s", msg);
+            _timeval.tv_sec = _timeval.tv_sec + 5;
+          }
+          else{
+            fprintf(stdout, "Already trying to connect.\n");
+          }
+>>>>>>> Workshop_do_pedro
       	}
-				  else{
-          fprintf(stdout, "-> The command \\entry is of type \"entry i boot boot.ip boot.gate\". Where i is a key.\n");
-          memset(buffer, 0, MAX);
-          memset(token, 0, MAX);
+				else{
+        fprintf(stdout, "-> The command \\entry is of type \"entry i boot boot.ip boot.gate\". Where i is a key.\n");
+        memset(buffer, 0, MAX);
+        memset(token, 0, MAX);
         }
       }
 
@@ -343,12 +379,12 @@ int max(int x, int y){
 
 struct Program_data init_program_data(){
   struct Program_data init_data;
-  init_data.ip = calloc(MAX, sizeof(char));
-  init_data.gate = calloc(MAX, sizeof(char));
-  init_data.succ_ip = calloc(MAX, sizeof(char));
-  init_data.succ_gate = calloc(MAX, sizeof(char));
-  init_data.s_succ_ip = calloc(MAX, sizeof(char));
-  init_data.s_succ_gate = calloc(MAX, sizeof(char));
+  init_data.ip = calloc(MIN, sizeof(char));
+  init_data.gate = calloc(MIN, sizeof(char));
+  init_data.succ_ip = calloc(MIN, sizeof(char));
+  init_data.succ_gate = calloc(MIN, sizeof(char));
+  init_data.s_succ_ip = calloc(MIN, sizeof(char));
+  init_data.s_succ_gate = calloc(MIN, sizeof(char));
   init_data.state_cl=0;
   init_data.state_sv=0;
   init_data.state_new_conection=0;
