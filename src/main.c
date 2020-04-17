@@ -80,14 +80,7 @@ int main(int argc, char *argv[]){
       FD_SET(tcp_client.fd, &rfds);
       maxfd = max(maxfd, tcp_client.fd) + 1;
     }
-    if(start < (time(NULL)-5)){
-      memset(msg, 0, MAX);
-      sprintf(msg,"EFND %d\n", my_data.key);
-      udp_client.n = sendto(udp_client.fd, msg, strlen(msg), 0, udp_client.res->ai_addr, udp_client.res->ai_addrlen);
-      if(udp_client.n == -1) /*error*/ exit(1);
-      fprintf(stderr, "-> Sent message as udp client: %s", msg);
-      start = time(NULL);
-    }
+
 
     counter = select(maxfd, &rfds, (fd_set*)NULL, (fd_set*)NULL, (struct timeval *)NULL);
 
@@ -122,6 +115,33 @@ int main(int argc, char *argv[]){
         close(udp_server.fd);
       }*/
     }
+
+
+    /* WAITING TO READ AS UDP CLIENT */
+    if(FD_ISSET(udp_client.fd, &rfds)){
+      memset(udp_client.buffer, 0, MAX);
+      udp_client.addrlen = sizeof(udp_client.addr);
+      if((udp_client.n = recvfrom(udp_client.fd, udp_client.buffer, 128, 0, (struct sockaddr*) &udp_client.addr, &udp_client.addrlen)) != 0){
+        if(udp_client.n == -1) /*error*/ exit(1);
+        fprintf(stdout, "Received message as client: %s\n", udp_client.buffer);
+        sscanf(udp_client.buffer, "%s", token);
+        /*EKEY: O servidor recebe uma resposta com a sua posição no anel. */
+        if(strcmp(token, "EKEY") == 0){
+          if(sscanf(udp_client.buffer, "%*s %d %d %s %s%c", &my_data.key, &my_data.succ_key, my_data.succ_ip, my_data.succ_gate, &eol) == 5 && eol == '\n'){
+            fprintf(stderr, "Executing sentry after receiving my successor!\n");
+            if(sentry(&my_data, &tcp_client, msg) == 0 ){
+              inside_a_ring = 1;
+              fprintf(stderr, "Closing UDP Client connection.\n");
+              freeaddrinfo(udp_client.res);
+              close(udp_client.fd);
+              state_udp_cl = 0;
+            }
+            else fprintf(stdout, "I can't have the same key as my sucessor.\n");
+          }
+        }
+      }
+    }
+
 
     /* WAITING FOR CONNECTING AS TCP SERVER*/
     if(FD_ISSET(tcp_server.fd, &rfds)){
@@ -247,7 +267,7 @@ int main(int argc, char *argv[]){
             fprintf(stderr,"-> UDP connection done. %d\n", udp_client.fd);
             state_udp_cl = 1;
             memset(msg, 0, MAX);
-            sprintf(msg,"Fail EFND %d\n", my_data.key);
+            sprintf(msg,"EFND %d\n", my_data.key);
             udp_client.n = sendto(udp_client.fd, msg, strlen(msg), 0, udp_client.res->ai_addr, udp_client.res->ai_addrlen);
             if(udp_client.n == -1) /*error*/ exit(1);
             fprintf(stderr, "-> Sent message as udp client: %s", msg);
@@ -255,6 +275,14 @@ int main(int argc, char *argv[]){
           }
           else{
             fprintf(stdout, "Already trying to connect.\n");
+          }
+          if(start < (time(NULL)-5)){
+            memset(msg, 0, MAX);
+            sprintf(msg,"EFND %d\n", my_data.key);
+            udp_client.n = sendto(udp_client.fd, msg, strlen(msg), 0, udp_client.res->ai_addr, udp_client.res->ai_addrlen);
+            if(udp_client.n == -1) /*error*/ exit(1);
+            fprintf(stderr, "-> Sent message as udp client: %s", msg);
+            start = time(NULL);
           }
       	}
 				else{

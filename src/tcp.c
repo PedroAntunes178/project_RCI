@@ -159,6 +159,7 @@ int take_a_decision(struct Program_connection* received, int response_fd, int pa
   memset(og_gate, 0, MIN);
   struct Program_connection tcp_sendkey;  /* cliente temporário para enviar info do FND */
 
+
   sscanf(received->buffer, "%s", token);
 
   /*SUCCCONF: Um servidor informa outro que este se tornou o seu sucessor. */
