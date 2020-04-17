@@ -243,7 +243,6 @@ int main(int argc, char *argv[]){
         strcat(new_conection_buffer, new_buffer);
         //if(sscanf(tcp_server.buffer, "%[^\n]s%c", &eol) == 1 && eol == '\n')
         afd = new_conection_to_me(afd, new_conection_fd, new_conection_buffer, my_data, udp_server);
-        memset(new_conection_buffer, 0, MAX);
         my_data.asked_for_entry = 0;
         my_data.state_new_conection = 0;
         new_conection_fd = -1;
@@ -450,7 +449,11 @@ int sentry(struct Program_data* my_data, struct Program_connection* tcp_client, 
   *tcp_client = init_tcp_cl(my_data->succ_ip, my_data->succ_gate);
   my_data->state_cl = 1;
   memset(msg, 0, MAX);
-  sprintf(msg, "NEW %d %s %s\n", my_data->key, my_data->ip, my_data->gate);
+  sprintf(msg, "NEW %d", my_data->key);
+  tcp_client->n = write(tcp_client->fd, msg, MAX);
+  if(tcp_client->n == -1) /*error*/ exit(1);;
+  memset(msg, 0, MAX);
+  sprintf(msg, " %s %s\n", my_data->ip, my_data->gate);
   tcp_client->n = write(tcp_client->fd, msg, MAX);
   if(tcp_client->n == -1) /*error*/ exit(1);
 

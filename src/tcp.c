@@ -114,6 +114,7 @@ int new_conection_to_me(int afd, int new_conection_fd, char* buffer, struct Prog
       free(msg);
       free(copy_ip);
       free(copy_gate);
+      memset(buffer, 0, MAX);
       return new_conection_fd;
     }
     else{
@@ -139,6 +140,7 @@ int new_conection_to_me(int afd, int new_conection_fd, char* buffer, struct Prog
         n = sendto(udp_server.fd, msg, strlen(msg), 0, (struct sockaddr*) &udp_server.addr, udp_server.addrlen);
         if (n==-1) exit(1);
       }
+      memset(buffer, 0, MAX);
     }
     else{
       fprintf(stderr, "ERROR -> The command \\KEY is of type \"KEY k succ succ.IP succ.port\\n\".\n");
