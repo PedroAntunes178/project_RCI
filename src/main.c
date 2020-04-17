@@ -341,6 +341,11 @@ int main(int argc, char *argv[]){
       else if(strcmp(buffer, "exit\n") == 0){
         if(inside_a_ring) leave(tcp_client, afd, &my_data);
         free_program_data(my_data);
+        fprintf(stderr, "Closing UDP Server connections.\n");
+        freeaddrinfo(udp_server.res);
+        close(udp_server.fd);
+        freeaddrinfo(tcp_server.res);
+        close(tcp_server.fd);
         fprintf(stderr, "\nExiting the application...\n");
         exit(EXIT_SUCCESS);
       }
