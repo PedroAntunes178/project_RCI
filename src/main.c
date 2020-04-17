@@ -43,8 +43,6 @@ int main(int argc, char *argv[]){
   char entry_sv_gate[MAX];	/*porto do servidor ao qual se solicita a entrada no anel*/
   int state_udp_cl = 0;
   int key_to_find = 0;
-  time_t start;
-  time_t in_the_moment;
 
   char buffer[MAX];
   char token[MAX];
@@ -270,7 +268,6 @@ int main(int argc, char *argv[]){
 				  udp_client.n = sendto(udp_client.fd, msg, strlen(msg), 0, udp_client.res->ai_addr, udp_client.res->ai_addrlen);
   				if(udp_client.n == -1) /*error*/ exit(1);
 					fprintf(stderr, "-> Sent message as udp client: %s", msg);
-          start = time(NULL);
       	}
 				  else{
           fprintf(stdout, "-> The command \\entry is of type \"entry i boot boot.ip boot.gate\". Where i is a key.\n");
