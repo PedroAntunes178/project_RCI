@@ -257,7 +257,7 @@ int main(int argc, char *argv[]){
             fprintf(stderr, "CORREU um calhão de vezes...\n");
             memset(msg, 0, MAX);
             sprintf(msg, "entry %d %d %s %s\n", my_data.key, entry_sv_key, entry_sv_ip, entry_sv_gate);
-            udp_client.n = write(0, msg, MAX);
+            udp_client.n = write(2, msg, MAX);
             if(udp_client.n == -1) /*error*/ exit(1);
           }
       	}
