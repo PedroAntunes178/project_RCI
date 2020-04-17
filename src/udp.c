@@ -9,6 +9,11 @@
 
 #include "server.h"
 
+
+/*
+** init_udp_sv( char* )
+** -> retorna e inicializa um servidor UDP.
+*/
 struct Program_connection init_udp_sv(char* gate){
 
   struct Program_connection server;
@@ -33,6 +38,10 @@ struct Program_connection init_udp_sv(char* gate){
 }
 
 
+/*
+** init_udp_cl( char* )
+** -> retorna e inicializa um cliente UDP.
+*/
 struct Program_connection init_udp_cl(char* ip, char* gate){
 
   struct Program_connection client;
