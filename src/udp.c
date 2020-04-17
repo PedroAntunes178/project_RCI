@@ -9,9 +9,16 @@
 
 #include "server.h"
 
+
+/*
+** init_udp_sv( char* )
+** -> retorna e inicializa um servidor UDP.
+*/
 struct Program_connection init_udp_sv(char* gate){
 
   struct Program_connection server;
+
+  memset(server.buffer, 0, MAX);
 
   server.fd = socket(AF_INET, SOCK_DGRAM, 0);
   if (server.fd == -1) /**error*/ exit(1);
@@ -31,9 +38,15 @@ struct Program_connection init_udp_sv(char* gate){
 }
 
 
+/*
+** init_udp_cl( char* )
+** -> retorna e inicializa um cliente UDP.
+*/
 struct Program_connection init_udp_cl(char* ip, char* gate){
 
   struct Program_connection client;
+
+  memset(client.buffer, 0, MAX);
 
   client.fd = socket(AF_INET, SOCK_DGRAM, 0);
   if (client.fd == -1) /**error*/ exit(1);
