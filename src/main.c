@@ -85,7 +85,6 @@ int main(int argc, char *argv[]){
       maxfd = max(maxfd, tcp_client.fd) + 1;
     }
 
-
     counter = select(maxfd, &rfds, (fd_set*)NULL, (fd_set*)NULL, &_timeval);
     if(counter == 0 && state_udp_cl){
       memset(msg, 0, MAX);
