@@ -70,19 +70,27 @@ int main(int argc, char *argv[]){
       maxfd = max(maxfd, new_conection_fd) + 1;
     }
     if(my_data.state_sv){
-      fprintf(stderr, "fd_set sv: %d\n", afd);
+      //fprintf(stderr, "fd_set sv: %d\n", afd);
       FD_SET(afd, &rfds);
       maxfd = max(maxfd, afd) + 1;
     }
     if(my_data.state_cl){
-      fprintf(stderr, "fd_set cl: %d\n", tcp_client.fd);
+      //fprintf(stderr, "fd_set cl: %d\n", tcp_client.fd);
       FD_SET(tcp_client.fd, &rfds);
       maxfd = max(maxfd, tcp_client.fd) + 1;
     }
 
     counter = select(maxfd, &rfds, (fd_set*)NULL, (fd_set*)NULL, (struct timeval *)NULL);
+    if(counter == 0 && state_udp_cl){
+      memset(msg, 0, MAX);
+      sprintf(msg,"EFND %d\n", my_data.key);
+      udp_client.n = sendto(udp_client.fd, msg, strlen(msg), 0, udp_client.res->ai_addr, udp_client.res->ai_addrlen);
+      if(udp_client.n == -1) /*error*/ exit(1);
+      fprintf(stderr, "-> Sent message as udp client: %s", msg);
+      _timeval.tv_sec = _timeval.tv_sec + 5;
 
-    if(counter <= 0) /*error*/
+    }
+    else if(counter < 0) /*error*/
       exit(1);
 
     /* WAITING TO READ AS UDP SERVER */
@@ -106,12 +114,6 @@ int main(int argc, char *argv[]){
           }
         }
       }
-      /*Não sei se isto  não será necessário
-      else{
-        fprintf(stderr, "Closed UDP Server connection.\n");
-        freeaddrinfo(udp_server.res);
-        close(udp_server.fd);
-      }*/
     }
 
     /* WAITING TO READ AS UDP CLIENT */
@@ -127,7 +129,8 @@ int main(int argc, char *argv[]){
           if(sscanf(udp_client.buffer, "%*s %d %d %s %s%c", &my_data.key, &my_data.succ_key, my_data.succ_ip, my_data.succ_gate, &eol) == 5 && eol == '\n'){
             fprintf(stderr, "Executing sentry after receiving my successor!\n");
             if(sentry(&my_data, &tcp_client, msg) == 0 ){
-            inside_a_ring = 1;
+              inside_a_ring = 1;
+              state_udp_cl = 0;
             }
             else fprintf(stdout, "I can't have the same key as my sucessor.\n");
           }
