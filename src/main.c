@@ -29,8 +29,8 @@ int main(int argc, char *argv[]){
 
   struct Program_connection udp_server = init_udp_sv(argv[2]);
   struct Program_connection tcp_server = init_tcp_sv(argv[2]);
-  struct Program_connection udp_client;
   struct Program_connection tcp_client;
+	struct Program_connection udp_client;
   tcp_client.fd = -1;
 	udp_client.fd = -1;
   fd_set rfds;
@@ -270,12 +270,13 @@ int main(int argc, char *argv[]){
         }
       }
 
-      /*ENTRY: ... */
+
+      /*ENTRY: adding a server in the ring without knowing it's location */
       else if(strcmp(token, "entry") == 0 && inside_a_ring == 0){
         if(sscanf(buffer, "%*s %d %d %s %s%c", &my_data.key, &entry_sv_key, entry_sv_ip, entry_sv_gate, &eol) == 5 && eol == '\n'){
           if (!(state_udp_cl)){
             udp_client = init_udp_cl(entry_sv_ip, entry_sv_gate);
-            fprintf(stderr,"-> UDP connection done. %d\n", udp_client.fd);
+            fprintf(stderr,"-> UDP connection done.\n");
             state_udp_cl = 1;
             memset(msg, 0, MAX);
             sprintf(msg,"EFND %d\n", my_data.key);
@@ -339,7 +340,7 @@ int main(int argc, char *argv[]){
       /*EXIT: exits the application successfully*/
       else if(strcmp(buffer, "exit\n") == 0){
         if(inside_a_ring) leave(tcp_client, afd, &my_data);
-        free_program_data(&my_data);
+        free_program_data(my_data);
         fprintf(stderr, "\nExiting the application...\n");
         exit(EXIT_SUCCESS);
       }
@@ -371,20 +372,20 @@ struct Program_data init_program_data(){
   return init_data;
 }
 
-int free_program_data(struct Program_data* free_data){
-  free(free_data->s_succ_ip);
-  free(free_data->s_succ_gate);
-	if(free_data->succ_ip != free_data->s_succ_ip)
-  	free(free_data->succ_ip);
+int free_program_data(struct Program_data free_data){
+  free(free_data.s_succ_ip);
+  free(free_data.s_succ_gate);
+	if(free_data.succ_ip != free_data.s_succ_ip)
+  	free(free_data.succ_ip);
   else fprintf(stderr, "There's proobably an error in the code!\n");
-	if(free_data->succ_gate != free_data->s_succ_gate)
-  	free(free_data->succ_gate);
+	if(free_data.succ_gate != free_data.s_succ_gate)
+  	free(free_data.succ_gate);
   else fprintf(stderr, "There's proobably an error in the code!\n");
-	if(free_data->ip != free_data->succ_ip && free_data->ip != free_data->s_succ_ip)
-  	free(free_data->ip);
+	if(free_data.ip != free_data.succ_ip && free_data.ip != free_data.s_succ_ip)
+  	free(free_data.ip);
   else fprintf(stderr, "There's proobably an error in the code!\n");
-	if(free_data->gate != free_data->succ_gate && free_data->gate != free_data->s_succ_gate)
-  	free(free_data->gate);
+	if(free_data.gate != free_data.succ_gate && free_data.gate != free_data.s_succ_gate)
+  	free(free_data.gate);
   else fprintf(stderr, "There's proobably an error in the code!\n");
   return 0;
 }
