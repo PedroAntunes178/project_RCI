@@ -139,6 +139,9 @@ int main(int argc, char *argv[]){
             if(sentry(&my_data, &tcp_client, msg) == 0 ){
               inside_a_ring = 1;
               state_udp_cl = 0;
+              freeaddrinfo(udp_client.res);
+              close(udp_client.fd);
+              udp_client.fd = -1;
             }
             else fprintf(stdout, "I can't have the same key as my sucessor.\n");
           }
@@ -149,6 +152,7 @@ int main(int argc, char *argv[]){
         freeaddrinfo(udp_client.res);
         close(udp_client.fd);
         state_udp_cl = 0;
+        udp_client.fd = -1;
       }
     }
 
@@ -188,6 +192,7 @@ int main(int argc, char *argv[]){
       else{
         fprintf(stderr, "\nConnection lost with predecessor.\n");
         close(afd);
+        afd = -1;
         my_data.state_sv = 0;
       }
     }
@@ -205,16 +210,17 @@ int main(int argc, char *argv[]){
         fprintf(stdout, "\nConnection lost with sucessor.\nEstablishing connection to new sucessor...\n");
         freeaddrinfo(tcp_client.res);
         close(tcp_client.fd);
+        tcp_client.fd = -1;
         strcpy(my_data.succ_ip, my_data.s_succ_ip);
         strcpy(my_data.succ_gate, my_data.s_succ_gate);
         my_data.succ_key = my_data.s_succ_key;
+        tcp_client = init_tcp_cl(my_data.succ_ip, my_data.succ_gate);
         if(my_data.succ_key != my_data.key){
           memset(msg, 0, MAX);
           sprintf(msg, "SUCC %d %s %s\n", my_data.succ_key, my_data.succ_ip, my_data.succ_gate);
           tcp_server.n = write(afd, msg, MAX);
           if(tcp_server.n == -1) /*error*/ exit(1);
           memset(msg, 0, MAX);
-          tcp_client = init_tcp_cl(my_data.succ_ip, my_data.succ_gate);
           sprintf(msg, "SUCCCONF\n");
           tcp_client.n = write(tcp_client.fd, msg, MAX);
           if(tcp_client.n == -1) /*error*/ exit(1);
@@ -238,6 +244,7 @@ int main(int argc, char *argv[]){
       else{
         fprintf(stderr, "Connection lost with new_conection.\n");
         close(new_conection_fd);
+        new_conection_fd = -1;
         my_data.state_new_conection = 0;
       }
     }
@@ -312,7 +319,7 @@ int main(int argc, char *argv[]){
 
       /*LEAVE: ... */
       else if(strcmp(buffer, "leave\n") == 0 && inside_a_ring){
-        leave(tcp_client, afd, &my_data);
+        leave(&tcp_client, &afd, &my_data);
         inside_a_ring = 0;
       }
 
@@ -339,7 +346,7 @@ int main(int argc, char *argv[]){
 
       /*EXIT: exits the application successfully*/
       else if(strcmp(buffer, "exit\n") == 0){
-        if(inside_a_ring) leave(tcp_client, afd, &my_data);
+        if(inside_a_ring) leave(&tcp_client, &afd, &my_data);
         free_program_data(my_data);
         fprintf(stderr, "Closing UDP Server connections.\n");
         freeaddrinfo(udp_server.res);
@@ -395,10 +402,12 @@ int free_program_data(struct Program_data free_data){
   return 0;
 }
 
-int leave(struct Program_connection tcp_client, int afd, struct Program_data* my_data){
-  freeaddrinfo(tcp_client.res);
-  close(tcp_client.fd);
-  close(afd);
+int leave(struct Program_connection* tcp_client, int* afd, struct Program_data* my_data){
+  freeaddrinfo(tcp_client->res);
+  close(tcp_client->fd);
+  close(*afd);
+  *afd = -1;
+  tcp_client->fd = -1;
   my_data->state_cl = 0;
   my_data->state_sv = 0;
   my_data->state_new_conection = 0;
