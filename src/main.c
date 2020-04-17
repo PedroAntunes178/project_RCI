@@ -376,12 +376,16 @@ int free_program_data(struct Program_data* free_data){
   free(free_data->s_succ_gate);
 	if(free_data->succ_ip != free_data->s_succ_ip)
   	free(free_data->succ_ip);
+  else fprintf(stderr, "There's proobably an error in the code!\n");
 	if(free_data->succ_gate != free_data->s_succ_gate)
   	free(free_data->succ_gate);
+  else fprintf(stderr, "There's proobably an error in the code!\n");
 	if(free_data->ip != free_data->succ_ip && free_data->ip != free_data->s_succ_ip)
   	free(free_data->ip);
+  else fprintf(stderr, "There's proobably an error in the code!\n");
 	if(free_data->gate != free_data->succ_gate && free_data->gate != free_data->s_succ_gate)
   	free(free_data->gate);
+  else fprintf(stderr, "There's proobably an error in the code!\n");
   return 0;
 }
 
