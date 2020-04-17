@@ -89,7 +89,6 @@ int new_conection_to_me(int afd, int new_conection_fd, char* buffer, struct Prog
       if(my_data.key==my_data.succ_key){
         //significa que é o segundo a se juntar ao anel
         sprintf(msg, "SUCC %d %s %s\n", copy_key, copy_ip, copy_gate);
-        //fprintf(stderr, "%s", msg);
         n = write(new_conection_fd, msg, strlen(msg));
         if (n==-1) /*error*/ exit(1);
       }

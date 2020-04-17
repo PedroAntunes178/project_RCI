@@ -205,17 +205,19 @@ int main(int argc, char *argv[]){
         fprintf(stdout, "\nConnection lost with sucessor.\nEstablishing connection to new sucessor...\n");
         freeaddrinfo(tcp_client.res);
         close(tcp_client.fd);
-        my_data.succ_ip = my_data.s_succ_ip;
-        my_data.succ_gate = my_data.s_succ_gate;
+        strcpy(my_data.succ_ip, my_data.s_succ_ip);
+        strcpy(my_data.succ_gate, my_data.s_succ_gate);
         my_data.succ_key = my_data.s_succ_key;
-        tcp_client = init_tcp_cl(my_data.succ_ip, my_data.succ_gate);
         if(my_data.succ_key != my_data.key){
-          sprintf(msg, "SUCCCONF\n");
-          tcp_client.n = write(tcp_client.fd, msg, MAX);
-          if(tcp_client.n == -1) /*error*/ exit(1);
+          memset(msg, 0, MAX);
           sprintf(msg, "SUCC %d %s %s\n", my_data.succ_key, my_data.succ_ip, my_data.succ_gate);
           tcp_server.n = write(afd, msg, MAX);
           if(tcp_server.n == -1) /*error*/ exit(1);
+          memset(msg, 0, MAX);
+          tcp_client = init_tcp_cl(my_data.succ_ip, my_data.succ_gate);
+          sprintf(msg, "SUCCCONF\n");
+          tcp_client.n = write(tcp_client.fd, msg, MAX);
+          if(tcp_client.n == -1) /*error*/ exit(1);
         }
       }
     }
