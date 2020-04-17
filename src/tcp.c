@@ -153,10 +153,10 @@ int take_a_decision(struct Program_connection* received, int response_fd, int pa
   int og_key;     /* chave do: servidor que fez o pedido em FND ou do servidor que tem a chave em KEY*/
   int own_dist;   /* distância do próprio servidor à chave */
   int succ_dist;  /* distância do sucessor à chave */
-  char og_ip[20];    /* ip do: servidor que fez o pedido em FND ou do servidor que tem a chave em KEY */
-  memset(og_ip, 0, 20);
-  char og_gate[20];  /* porta do: servidor que fez o pedido em FND ou do servidor que tem a chave em KEY */
-  memset(og_gate, 0, 20);
+  char og_ip[MIN];    /* ip do: servidor que fez o pedido em FND ou do servidor que tem a chave em KEY */
+  memset(og_ip, 0, MIN);
+  char og_gate[MIN];  /* porta do: servidor que fez o pedido em FND ou do servidor que tem a chave em KEY */
+  memset(og_gate, 0, MIN);
   struct Program_connection tcp_sendkey;  /* cliente temporário para enviar info do FND */
 
   sscanf(received->buffer, "%s", token);

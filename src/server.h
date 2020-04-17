@@ -2,6 +2,8 @@
 #define HEADER_FILE
 
 #define MAX 128
+#define MIN 32
+
 
 struct Program_data{
   int key;
