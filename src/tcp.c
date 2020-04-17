@@ -13,12 +13,16 @@
 
 #define MAXKEY 16
 
+/*
+** init_tcp_sv( char* )
+** -> retorna e inicializa um servidor TCP.
+*/
 struct Program_connection init_tcp_sv(char* gate){
 
   struct Program_connection server;
 
   memset(server.buffer, 0, MAX);
-  
+
   server.fd = socket(AF_INET, SOCK_STREAM, 0); //TCP socket
   if (server.fd == -1) /**error*/ exit(1);
 
@@ -38,6 +42,11 @@ struct Program_connection init_tcp_sv(char* gate){
   return server;
 }
 
+
+/*
+** init_tcp_cl( char* , char* )
+** -> retorna e inicializa um cliente TCP.
+*/
 struct Program_connection init_tcp_cl(char* ip, char* gate){
 
   struct Program_connection client;
@@ -60,6 +69,11 @@ struct Program_connection init_tcp_cl(char* ip, char* gate){
   return(client);
 }
 
+
+/*
+** init_tcp_cl( char* , char* )
+** -> trata de duas mensagens protoculares ( NEW , KEY ) retornando o afd.
+*/
 int new_conection_to_me(int afd, int new_conection_fd, char* buffer, struct Program_data my_data, struct Program_connection udp_server){
 
   int n;
@@ -138,6 +152,11 @@ int new_conection_to_me(int afd, int new_conection_fd, char* buffer, struct Prog
 }
 
 
+/*
+** take_a_decision( struct Program_connection* , int , int , struct Program_data* )
+** -> trata de várias mensagens protoculares ( SUCCCONF , SUCC , NEW , FND )
+**    retornando 0 caso o comando seja válido.
+*/
 int take_a_decision(struct Program_connection* received, int response_fd, int pass_the_message_fd, struct Program_data* my_data){
 
   int key;
@@ -147,13 +166,12 @@ int take_a_decision(struct Program_connection* received, int response_fd, int pa
   char msg[MAX];
   memset(msg, 0, MAX);
 
-  /* variáveis extra usadas para a funcionalidade FIND*/
-  int og_key;     /* chave do: servidor que fez o pedido em FND ou do servidor que tem a chave em KEY*/
-  int own_dist;   /* distância do próprio servidor à chave */
-  int succ_dist;  /* distância do sucessor à chave */
-  char og_ip[MIN];    /* ip do: servidor que fez o pedido em FND ou do servidor que tem a chave em KEY */
+  int og_key;             /* chave do: servidor que fez o pedido em FND ou do servidor que tem a chave em KEY*/
+  int own_dist;           /* distância do próprio servidor à chave */
+  int succ_dist;          /* distância do sucessor à chave */
+  char og_ip[MIN];        /* ip do: servidor que fez o pedido em FND ou do servidor que tem a chave em KEY */
   memset(og_ip, 0, MIN);
-  char og_gate[MIN];  /* porta do: servidor que fez o pedido em FND ou do servidor que tem a chave em KEY */
+  char og_gate[MIN];      /* porta do: servidor que fez o pedido em FND ou do servidor que tem a chave em KEY */
   memset(og_gate, 0, MIN);
   struct Program_connection tcp_sendkey;  /* cliente temporário para enviar info do FND */
 
@@ -166,7 +184,6 @@ int take_a_decision(struct Program_connection* received, int response_fd, int pa
       sprintf(msg, "SUCC %d %s %s\n", my_data->succ_key, my_data->succ_ip, my_data->succ_gate);
       received->n = write(response_fd, msg, strlen(msg));
       if (received->n==-1) /*error*/ exit(1);
-      return 0;
     }
     else{
       fprintf(stderr, "-> The command \\SUCCCONF is of type \"SUCCCONF\\n\".\n");
@@ -179,7 +196,6 @@ int take_a_decision(struct Program_connection* received, int response_fd, int pa
   else if(strcmp(token, "SUCC") == 0){
     if(sscanf(received->buffer, "%*s %d %s %s%c", &my_data->s_succ_key, my_data->s_succ_ip, my_data->s_succ_gate, &eol) == 4 && eol == '\n'){
       fprintf(stderr, "Information about the sucessor of my sucessor arived.\n");
-      return 0;
     }
     else{
       fprintf(stderr, "-> The command \\SUCC is of type \"SUCC succ succ.IP succ.port\\n\".\n");
@@ -205,7 +221,6 @@ int take_a_decision(struct Program_connection* received, int response_fd, int pa
       sprintf(msg, "SUCC %d %s %s\n", my_data->succ_key, my_data->succ_ip, my_data->succ_gate);
       received->n = write(pass_the_message_fd, msg, strlen(msg));
       if (received->n==-1) /*error*/ exit(1);
-      return 0;
     }
     else{
       fprintf(stderr, "-> The command \\NEW is of type \"NEW i i.IP i.port\\n\".\n");
@@ -241,18 +256,16 @@ int take_a_decision(struct Program_connection* received, int response_fd, int pa
         freeaddrinfo(tcp_sendkey.res);
         close(tcp_sendkey.fd);
       }
-      return 0;
     }
     else{
       fprintf(stderr, "-> The command \\FND is of type \"FND k i i.IP i.port\\n\".\n");
       return -1;
     }
   }
-
-  /*Invalid command, ignores it*/
   else{
     fprintf(stderr, "Received invalid TCP message.\n");
     return -1;
   }
+  memset(received->buffer, 0 , MAX);
   return 0;//on sucess
 }

@@ -15,6 +15,10 @@
 #define MAXKEY 16
 
 
+/*
+** main( int , char** )
+** -> função main, alberga o código principal à compreensão do programa.
+*/
 int main(int argc, char *argv[]){
 
   if(argc != 3){
@@ -37,26 +41,26 @@ int main(int argc, char *argv[]){
   int maxfd, counter, newfd, afd = -1, new_conection_fd = -1;
   char* new_conection_buffer = calloc(MAX, sizeof(char));
 
-
-  int find_key;
-
+  int find_key;             /* key que se quer encontrar através do comando FIND */
   int entry_sv_key = 0;			/* chave do servidor ao qual se solicita a entrada no anel */
   char entry_sv_ip[MIN];		/* ip do servidor ao qual se solicita a entrada no anel */
   char entry_sv_gate[MIN];	/* porto do servidor ao qual se solicita a entrada no anel */
   int state_udp_cl = 0;     /* estado do servidor como cliente udp */
-  int key_to_find = 0;      /* key que ser quer encontrar através de FND */
+  int key_to_find = 0;      /* key que se quer encontrar através do comando ENTRY */
 
   char buffer[MAX];         /* usado como buffer */
+  char new_buffer[MAX];     /* usado como buffer */
   char token[MAX];          /* usado como token */
   char msg[MAX];            /* usado para enviar comandos entre servidores */
   char eol = 0;             /* usado para encontrar o '\n' das comunicações */
   int inside_a_ring = 0;    /* flag de estado do servidor no anel */
 
-
-  struct timeval _timeval;
+  struct timeval _timeval;  /* timer utilizado para utilizar UDP fielmente */
   _timeval.tv_usec = 500;
   _timeval.tv_sec = 5;
 
+
+  /* loop principal do programa */
   while(1){
     FD_ZERO(&rfds);
     FD_SET(0, &rfds);
@@ -84,6 +88,7 @@ int main(int argc, char *argv[]){
     }
 
 
+    /* seleção do código a executar de acordo com o FD_SET */
     counter = select(maxfd, &rfds, (fd_set*)NULL, (fd_set*)NULL, &_timeval);
     if(counter == 0){
       if(state_udp_cl && !inside_a_ring){
@@ -97,6 +102,7 @@ int main(int argc, char *argv[]){
     }
     else if(counter < 0) /*error*/
       exit(1);
+
 
     /* Leitura de dados como servidor UDP */
     if(FD_ISSET(udp_server.fd, &rfds)){
@@ -179,10 +185,12 @@ int main(int argc, char *argv[]){
 
     /* Leitura de dados como servidor TCP */
     if(FD_ISSET(afd, &rfds)){
-      memset(tcp_server.buffer, 0, MAX);
-      if((tcp_server.n = read(afd, tcp_server.buffer, 128)) != 0){
+      memset(new_buffer, 0, MAX);
+      if((tcp_server.n = read(afd, new_buffer, 128)) != 0){
         if(tcp_server.n == -1) /*error*/ exit(1);
-        fprintf(stdout, "Received: %s", tcp_server.buffer);
+        fprintf(stdout, "Received: %s", new_buffer);
+        strcat(tcp_server.buffer, new_buffer);
+        //if(sscanf(tcp_server.buffer, "%*[^\n]s%c", &eol) == 1 && eol == '\n')
         take_a_decision(&tcp_server, afd, tcp_client.fd, &my_data);
       }
       else{
@@ -196,11 +204,13 @@ int main(int argc, char *argv[]){
 
     /* Leitura de dados como cliente TCP */
     if(FD_ISSET(tcp_client.fd, &rfds)){
-      memset(tcp_client.buffer, 0, MAX);
-      if((tcp_client.n = read(tcp_client.fd, tcp_client.buffer, 128)) != 0){
+      memset(new_buffer, 0, MAX);
+      if((tcp_client.n = read(tcp_client.fd, new_buffer, 128)) != 0){
         if(tcp_client.n == -1) /*error*/ exit(1);
-        fprintf(stdout, "echo: %s", buffer);
-        take_a_decision(&tcp_client, tcp_client.fd, afd, &my_data);
+        fprintf(stdout, "echo: %s", new_buffer);
+        strcat(tcp_client.buffer, new_buffer);
+        //if(sscanf(tcp_server.buffer, "%[^\n]s%c", &eol) == 1 && eol == '\n')
+          take_a_decision(&tcp_client, tcp_client.fd, afd, &my_data);
       }
       else{
         fprintf(stdout, "\nConnection lost with sucessor.\nEstablishing connection to new sucessor...\n");
@@ -227,10 +237,13 @@ int main(int argc, char *argv[]){
 
     /* Leitura de dados como novo servidor TCP */
     if(FD_ISSET(new_conection_fd, &rfds)){
-      memset(new_conection_buffer, 0, MAX);
-      if((tcp_server.n = read(new_conection_fd, new_conection_buffer, 128)) != 0){
+      memset(new_buffer, 0, MAX);
+      if((tcp_server.n = read(new_conection_fd, new_buffer, 128)) != 0){
         if(tcp_server.n == -1) /*error*/ exit(1);
+        strcat(new_conection_buffer, new_buffer);
+        //if(sscanf(tcp_server.buffer, "%[^\n]s%c", &eol) == 1 && eol == '\n')
         afd = new_conection_to_me(afd, new_conection_fd, new_conection_buffer, my_data, udp_server);
+        memset(new_conection_buffer, 0, MAX);
         my_data.asked_for_entry = 0;
         my_data.state_new_conection = 0;
         new_conection_fd = -1;
@@ -243,6 +256,7 @@ int main(int argc, char *argv[]){
         my_data.state_new_conection = 0;
       }
     }
+
 
     /*
     * Leitura do input pelo teclado
@@ -327,6 +341,7 @@ int main(int argc, char *argv[]){
       /* FIND: procura do servidor que alberga uma determinada chave */
       else if(strcmp(token, "find") == 0){
           if(sscanf(buffer, "%*s %d%c", &find_key, &eol) == 2 && eol == '\n'){
+            memset(msg, 0, MAX);
             sprintf(msg, "FND %d %d %s %s\n", find_key, my_data.key, my_data.ip, my_data.gate);
             tcp_client.n = write(tcp_client.fd, msg, MAX);
             if(tcp_client.n == -1) /*error*/ exit(1);
@@ -367,7 +382,7 @@ int max(int x, int y){
 }
 
 /*
-** init_program_data()
+** init_program_data( void )
 ** -> retorna uma estrutura com toda a informação de um servidor inicializada.
 */
 struct Program_data init_program_data(){
