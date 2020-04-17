@@ -116,10 +116,10 @@ int new_conection_to_me(int afd, int new_conection_fd, char* buffer, struct Prog
   pesquisa.*/
   else if(strcmp(token, "KEY") == 0){
     if(sscanf(buffer, "%*s %d %d %s %s%c", &find_key, &copy_key, copy_ip, copy_gate, &eol) == 5 && eol == '\n'){
-      fprintf(stderr, "%d\n", find_key);
-      fprintf(stderr, "%d\n", copy_key);
-      fprintf(stderr, "%s\n", copy_ip);
-      fprintf(stderr, "%s\n", copy_gate);
+      fprintf(stdout, "->Key found: %d\n", find_key);
+      fprintf(stdout, "->Found key owner key: %d\n", copy_key);
+      fprintf(stdout, "->Found key owner ip: %s\n", copy_ip);
+      fprintf(stdout, "->Found key owner gate: %s\n", copy_gate);
       close(new_conection_fd);
       if(my_data.asked_for_entry){
         memset(msg, 0, MAX);

@@ -65,12 +65,12 @@ int main(int argc, char *argv[]){
     A sequência de ifs que se seguem servem para não inicializar os file descriptors sem eles serem necessários.
     */
     if(state_udp_cl){
-      fprintf(stderr, "fd_set udp_cl: %d\n", udp_client.fd);
+      //fprintf(stderr, "fd_set udp_cl: %d\n", udp_client.fd);
       FD_SET(udp_client.fd, &rfds);
       maxfd = max(maxfd, udp_client.fd) + 1;
     }
     if(my_data.state_new_conection){
-      fprintf(stderr, "fd_set new_conection: %d\n", new_conection_fd);
+      //fprintf(stderr, "fd_set new_conection: %d\n", new_conection_fd);
       FD_SET(new_conection_fd, &rfds);
       maxfd = max(maxfd, new_conection_fd) + 1;
     }
@@ -87,14 +87,15 @@ int main(int argc, char *argv[]){
 
 
     counter = select(maxfd, &rfds, (fd_set*)NULL, (fd_set*)NULL, &_timeval);
-    if(counter == 0 && state_udp_cl){
-      memset(msg, 0, MAX);
-      sprintf(msg,"EFND %d\n", my_data.key);
-      udp_client.n = sendto(udp_client.fd, msg, strlen(msg), 0, udp_client.res->ai_addr, udp_client.res->ai_addrlen);
-      if(udp_client.n == -1) /*error*/ exit(1);
-      fprintf(stderr, "-> Sent message as udp client: %s", msg);
+    if(counter == 0){
+      if(state_udp_cl && !inside_a_ring){
+        memset(msg, 0, MAX);
+        sprintf(msg,"EFND %d\n", my_data.key);
+        udp_client.n = sendto(udp_client.fd, msg, strlen(msg), 0, udp_client.res->ai_addr, udp_client.res->ai_addrlen);
+        if(udp_client.n == -1) /*error*/ exit(1);
+        fprintf(stderr, "-> Sent message as udp client: %s", msg);
+      }
       _timeval.tv_sec = _timeval.tv_sec + 5;
-
     }
     else if(counter < 0) /*error*/
       exit(1);
@@ -129,7 +130,7 @@ int main(int argc, char *argv[]){
       udp_client.addrlen = sizeof(udp_client.addr);
       if((udp_client.n = recvfrom(udp_client.fd, udp_client.buffer, 128, 0, (struct sockaddr*) &udp_client.addr, &udp_client.addrlen)) != 0){
         if(udp_client.n == -1) /*error*/ exit(1);
-        fprintf(stdout, "Received message as client: %s\n", udp_client.buffer);
+        fprintf(stdout, "Received message as client: %s", udp_client.buffer);
         sscanf(udp_client.buffer, "%s", token);
         /*EKEY: O servidor recebe uma resposta com a sua posição no anel. */
         if(strcmp(token, "EKEY") == 0){
@@ -185,7 +186,7 @@ int main(int argc, char *argv[]){
         take_a_decision(&tcp_server, afd, tcp_client.fd, &my_data);
       }
       else{
-        fprintf(stderr, "Connection lost with predecessor.\n");
+        fprintf(stderr, "\nConnection lost with predecessor.\n");
         close(afd);
         my_data.state_sv = 0;
       }
@@ -201,7 +202,7 @@ int main(int argc, char *argv[]){
         take_a_decision(&tcp_client, tcp_client.fd, afd, &my_data);
       }
       else{
-        fprintf(stdout, "Connection lost with sucessor.\nEstablishing connection to new sucessor...\n");
+        fprintf(stdout, "\nConnection lost with sucessor.\nEstablishing connection to new sucessor...\n");
         freeaddrinfo(tcp_client.res);
         close(tcp_client.fd);
         my_data.succ_ip = my_data.s_succ_ip;
@@ -230,7 +231,7 @@ int main(int argc, char *argv[]){
         my_data.asked_for_entry = 0;
         new_conection_fd = -1;
         my_data.state_new_conection = 0;
-        fprintf(stdout, "New connection processed successfully.\n");
+        fprintf(stderr, "New connection processed successfully.\n");
       }
       else{
         fprintf(stderr, "Connection lost with new_conection.\n");
@@ -275,11 +276,10 @@ int main(int argc, char *argv[]){
             fprintf(stderr,"-> UDP connection done. %d\n", udp_client.fd);
             state_udp_cl = 1;
             memset(msg, 0, MAX);
-            sprintf(msg,"EFaND %d\n", my_data.key);
+            sprintf(msg,"EFND %d\n", my_data.key);
             udp_client.n = sendto(udp_client.fd, msg, strlen(msg), 0, udp_client.res->ai_addr, udp_client.res->ai_addrlen);
             if(udp_client.n == -1) /*error*/ exit(1);
             fprintf(stderr, "-> Sent message as udp client: %s", msg);
-            _timeval.tv_sec = _timeval.tv_sec + 5;
           }
           else{
             fprintf(stdout, "Already trying to connect.\n");
@@ -342,7 +342,7 @@ int main(int argc, char *argv[]){
         exit(EXIT_SUCCESS);
       }
       /*Invalid command, ignores it*/
-      else printf("-> Invalid command.\n");
+      else fprintf(stderr, "ERROR -> Invalid command.\n");
     }
   }
 }
@@ -390,7 +390,7 @@ int leave(struct Program_connection tcp_client, int afd, struct Program_data* my
   my_data->state_cl = 0;
   my_data->state_sv = 0;
   my_data->state_new_conection = 0;
-  fprintf(stdout, "Leaving the ring...\n");
+  fprintf(stderr, "Leaving the ring...\n");
   return 0;
 }
 
@@ -405,10 +405,10 @@ int sentry(struct Program_data* my_data, struct Program_connection* tcp_client, 
   tcp_client->n = write(tcp_client->fd, msg, MAX);
   if(tcp_client->n == -1) /*error*/ exit(1);
 
-  fprintf(stdout, "Key : %d\n", my_data->key);
-  fprintf(stdout, "Next server key: %d\n", my_data->succ_key);
-  fprintf(stdout, "Next server ip: %s\n", my_data->succ_ip);
-  fprintf(stdout, "Next server gate: %s\n", my_data->succ_gate);
-  fprintf(stderr, "-> Server sentered.\n");
+  fprintf(stdout, "-> Key: %d\n", my_data->key);
+  fprintf(stdout, "-> Next server key: %d\n", my_data->succ_key);
+  fprintf(stdout, "-> Next server ip: %s\n", my_data->succ_ip);
+  fprintf(stdout, "-> Next server gate: %s\n", my_data->succ_gate);
+  fprintf(stderr, "Server sentered...\n");
   return 0;
  }
