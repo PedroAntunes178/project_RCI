@@ -56,7 +56,11 @@ struct Program_connection init_tcp_cl(char* ip, char* gate){
   return(client);
 }
 
+<<<<<<< HEAD
 int new_conection_to_me(int afd, int new_conection_fd, char* buffer, struct Program_data my_data, struct Program_connection udp_server){
+=======
+int new_conection_to_me(int afd, int new_conection_fd, struct Program_data my_data, char* buffer){
+>>>>>>> 91d8a6cb38b9f739a97497c9b2908baa7224b2d1
 
   int n;
   char eol = 0;
@@ -70,6 +74,7 @@ int new_conection_to_me(int afd, int new_conection_fd, char* buffer, struct Prog
   char* copy_ip;
   copy_ip = calloc(MAX, sizeof(char));
   char* copy_gate;
+<<<<<<< HEAD
   copy_gate = calloc(MAX, sizeof(char));
 
   //vamos ter de arranjar forma para confirmar que a msg que queremos ler está toda no buffer
@@ -77,6 +82,15 @@ int new_conection_to_me(int afd, int new_conection_fd, char* buffer, struct Prog
   sscanf(buffer, "%s", token);
   fprintf(stderr, "New message received: %s", buffer);
 
+=======
+  copy_gate = malloc((MAX+1)*sizeof(char));
+
+  //vamos ter de arranjar forma para confirmar que a msg que queremos ler está toda no buffer
+  strcpy(my_data.buffer, buffer);
+  sscanf(buffer, "%s", token);
+  fprintf(stderr, "New message received: %s", buffer);
+
+>>>>>>> 91d8a6cb38b9f739a97497c9b2908baa7224b2d1
   /*NEW: Esta mensagem é usada em dois contextos diferentes. (1)(este caso) Um servidor entrante
   informa o seu futuro sucessor que pretende entrar no anel com chave i, endereço
   IP i.IP e porto i.port. (2) Um servidor informa o seu atual predecessor que o
@@ -121,12 +135,15 @@ int new_conection_to_me(int afd, int new_conection_fd, char* buffer, struct Prog
       fprintf(stderr, "%s\n", copy_ip);
       fprintf(stderr, "%s\n", copy_gate);
       close(new_conection_fd);
+<<<<<<< HEAD
       if(my_data.asked_for_entry){
         memset(msg, 0, MAX);
         sprintf(msg, "EKEY %d %d %s %s\n", find_key, copy_key, copy_ip, copy_gate);
         n = sendto(udp_server.fd, msg, strlen(msg), 0, (struct sockaddr*) &udp_server.addr, udp_server.addrlen);
         if (n==-1) exit(1);
       }
+=======
+>>>>>>> 91d8a6cb38b9f739a97497c9b2908baa7224b2d1
     }
     else{
       fprintf(stderr, "ERROR -> The command \\KEY is of type \"KEY k succ succ.IP succ.port\\n\".\n");
@@ -144,10 +161,17 @@ int take_a_decision(struct Program_connection* received, int response_fd, int pa
 
   int key;
   char eol = 0;
+<<<<<<< HEAD
   char token[MAX];
   memset(token, 0, MAX);
   char msg[MAX];
   memset(msg, 0, MAX);
+=======
+  char* token;
+  token = (char*)malloc((MAX+1)*sizeof(char));
+  char* msg;
+  msg = (char*)malloc((MAX+1)*sizeof(char));
+>>>>>>> 91d8a6cb38b9f739a97497c9b2908baa7224b2d1
 
   /* variáveis extra usadas para a funcionalidade FIND*/
   int og_key;     /* chave do: servidor que fez o pedido em FND ou do servidor que tem a chave em KEY*/
@@ -194,6 +218,10 @@ int take_a_decision(struct Program_connection* received, int response_fd, int pa
   servidor de chave i, endereço IP i.IP e porto i.port pretende entrar no anel,
   para que o predecessor estabeleça o servidor entrante como seu sucessor.*/
   else if(strcmp(token, "NEW") == 0){
+<<<<<<< HEAD
+=======
+    fprintf(stderr, "aqui shit hole\n");
+>>>>>>> 91d8a6cb38b9f739a97497c9b2908baa7224b2d1
     if(sscanf(received->buffer, "%*s %d %s %s%c", &my_data->succ_key, my_data->succ_ip, my_data->succ_gate, &eol) == 4 && eol == '\n'){
       freeaddrinfo(received->res);
       close(response_fd);
@@ -238,7 +266,11 @@ int take_a_decision(struct Program_connection* received, int response_fd, int pa
         sprintf(msg, "KEY %d %d %s %s\n", key, my_data->succ_key, my_data->succ_ip, my_data->succ_gate);
         tcp_sendkey.n = write(tcp_sendkey.fd, msg, MAX);
         if(tcp_sendkey.n == 1) /*error*/ exit(1);
+<<<<<<< HEAD
         fprintf(stdout, "-> Key found in my successor.\n");
+=======
+        fprintf(stderr, "-> Key found in my successor.\n");
+>>>>>>> 91d8a6cb38b9f739a97497c9b2908baa7224b2d1
       }
       return 0;
     }

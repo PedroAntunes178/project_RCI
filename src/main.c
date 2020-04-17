@@ -29,8 +29,8 @@ int main(int argc, char *argv[]){
 
   struct Program_connection udp_server = init_udp_sv(argv[2]);
   struct Program_connection tcp_server = init_tcp_sv(argv[2]);
-  struct Program_connection udp_client;
   struct Program_connection tcp_client;
+	struct Program_connection udp_client;
   tcp_client.fd = -1;
 	udp_client.fd = -1;
   fd_set rfds;
@@ -81,6 +81,11 @@ int main(int argc, char *argv[]){
       FD_SET(tcp_client.fd, &rfds);
       maxfd = max(maxfd, tcp_client.fd) + 1;
     }
+		if(state_udp_cl){
+			fprintf(stderr, "fd_set udp_cl: %d\n", udp_client.fd);
+			FD_SET(udp_client.fd, &rfds);
+			maxfd = max(maxfd, udp_client.fd) + 1;
+		}
 
     counter = select(maxfd, &rfds, (fd_set*)NULL, (fd_set*)NULL, (struct timeval *)NULL);
 
@@ -259,7 +264,8 @@ int main(int argc, char *argv[]){
         }
       }
 
-      /*ENTRY: ... */
+/*********************************************************************************************/
+      /*ENTRY: adding a server in the ring without knowing it's location */
       else if(strcmp(token, "entry") == 0 && inside_a_ring == 0){
         if(sscanf(buffer, "%*s %d %d %s %s%c", &my_data.key, &entry_sv_key, entry_sv_ip, entry_sv_gate, &eol) == 5 && eol == '\n'){
 					udp_client = init_udp_cl(entry_sv_ip, entry_sv_gate);
@@ -324,7 +330,7 @@ int main(int argc, char *argv[]){
       /*EXIT: exits the application successfully*/
       else if(strcmp(buffer, "exit\n") == 0){
         if(inside_a_ring) leave(tcp_client, afd, &my_data);
-        free_program_data(&my_data);
+        free_program_data(my_data);
         fprintf(stderr, "\nExiting the application...\n");
         exit(EXIT_SUCCESS);
       }
@@ -355,13 +361,13 @@ struct Program_data init_program_data(){
   return init_data;
 }
 
-int free_program_data(struct Program_data* free_data){
-  free(free_data->s_succ_ip);
-  free(free_data->s_succ_gate);
-  free(free_data->succ_ip);
-  free(free_data->succ_gate);
-  free(free_data->ip);
-  free(free_data->gate);
+int free_program_data(struct Program_data free_data){
+  free(free_data.s_succ_ip);
+  free(free_data.s_succ_gate);
+  free(free_data.succ_ip);
+  free(free_data.succ_gate);
+  free(free_data.ip);
+  free(free_data.gate);
   return 0;
 }
 
