@@ -177,7 +177,7 @@ int main(int argc, char *argv[]){
 
     /* WAITING TO READ AS TCP SERVER*/
     if(FD_ISSET(afd, &rfds)){
-      //printf("Entrou!!\n");
+      printf("Entrou?!\n");
       //O codigo está stuck no read devia estar a ler new
       memset(tcp_server.buffer, 0, MAX);
       if((tcp_server.n = read(afd, tcp_server.buffer, 128)) != 0){
