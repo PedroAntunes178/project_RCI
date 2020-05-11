@@ -86,11 +86,6 @@ int main(int argc, char *argv[]){
       FD_SET(tcp_client.fd, &rfds);
       maxfd = max(maxfd, tcp_client.fd) + 1;
     }
-		if(state_udp_cl){
-			fprintf(stderr, "fd_set udp_cl: %d\n", udp_client.fd);
-			FD_SET(udp_client.fd, &rfds);
-			maxfd = max(maxfd, udp_client.fd) + 1;
-		}
 
 
     /* seleção do código a executar de acordo com o FD_SET */
@@ -195,8 +190,8 @@ int main(int argc, char *argv[]){
         if(tcp_server.n == -1) /*error*/ exit(1);
         fprintf(stdout, "Received: %s", new_buffer);
         strcat(tcp_server.buffer, new_buffer);
-        //if(sscanf(tcp_server.buffer, "%*[^\n]s%c", &eol) == 1 && eol == '\n')
-        take_a_decision(&tcp_server, afd, tcp_client.fd, &my_data);
+        //if(sscanf(tcp_server.buffer, "%[^\n]s%c", &eol) == 1 && eol == '\n')
+          take_a_decision(&tcp_server, afd, tcp_client.fd, &my_data);
       }
       else{
         fprintf(stderr, "\nConnection lost with predecessor.\n");
@@ -346,7 +341,7 @@ int main(int argc, char *argv[]){
       /* FIND: procura do servidor que alberga uma determinada chave */
       else if(strcmp(token, "find") == 0){
           if(sscanf(buffer, "%*s %d%c", &find_key, &eol) == 2 && eol == '\n'){
-            memset(msg, 0, MAX);
+					  memset(msg, 0, MAX);
             sprintf(msg, "FND %d %d %s %s\n", find_key, my_data.key, my_data.ip, my_data.gate);
             tcp_client.n = write(tcp_client.fd, msg, MAX);
             if(tcp_client.n == -1) /*error*/ exit(1);
@@ -455,11 +450,7 @@ int sentry(struct Program_data* my_data, struct Program_connection* tcp_client, 
   *tcp_client = init_tcp_cl(my_data->succ_ip, my_data->succ_gate);
   my_data->state_cl = 1;
   memset(msg, 0, MAX);
-  sprintf(msg, "NEW %d", my_data->key);
-  tcp_client->n = write(tcp_client->fd, msg, MAX);
-  if(tcp_client->n == -1) /*error*/ exit(1);;
-  memset(msg, 0, MAX);
-  sprintf(msg, " %s %s\n", my_data->ip, my_data->gate);
+  sprintf(msg, "NEW %d %s %s\n", my_data->key, my_data->ip, my_data->gate);
   tcp_client->n = write(tcp_client->fd, msg, MAX);
   if(tcp_client->n == -1) /*error*/ exit(1);
 
